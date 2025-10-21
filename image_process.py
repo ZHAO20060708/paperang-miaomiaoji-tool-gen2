@@ -122,32 +122,51 @@ class ImageConverter:
         return bmp_data
 
 class TextConverter:
-    def text2bmp(text, height=25, font_path=None, font_size=24):
-        # Create a blank image with width 576 (printer width)
-        img = Image.new('L', (576, height), 255)  # White background
+    def text2bmp(text, font_size=24):
+        # Use a monospace font
+        mono_font_candidates = [
+            "HarmonyOS_Sans_SC_Regular.ttf"
+        ]
+        
+        font = ImageFont.load_default()
+        for font_file in mono_font_candidates:
+            try:
+                font = ImageFont.truetype(font_file, font_size)
+                font.set_variation_by_name("WIDTH")
+                break
+            except:
+                continue
+        
+        # Split text into lines
+        lines = []
+        for paragraph in text.split('\n'):
+            line = ''
+            for char in paragraph:
+                # Check the width of the line with the new character
+                test_line = line + char
+                bbox = font.getbbox(test_line)
+                if bbox[2] <= 576:
+                    line = test_line
+                else:
+                    # Line is full, start a new line
+                    lines.append(line)
+                    line = char
+            
+            # Add the last line if it's not empty
+            if line:
+                lines.append(line)
+        
+        # Calculate line height
+        line_height = font.getbbox('A')[3]
+        
+        # Create a blank image with width 576 (printer width) and height based on number of lines
+        img = Image.new('L', (576, line_height * len(lines) + 10), 255)  # White background
         draw = ImageDraw.Draw(img)
         
-        # Try to use a better font if available
-        try:
-            if font_path:
-                font = ImageFont.truetype(font_path, font_size)
-            else:
-                # Try to find a system font that supports Chinese
-                font_candidates = [
-                    "HarmonyOS_Sans_SC_Regular.ttf"
-                ]
-                font = None
-                for font_file in font_candidates:
-                    try:
-                        font = ImageFont.truetype(font_file, font_size)
-                        break
-                    except:
-                        continue
-                if font is None:
-                    font = ImageFont.load_default()
-        except:
-            font = ImageFont.load_default()
+        # Draw text line by line
+        y_text = 0
+        for line in lines:
+            draw.text((0, y_text), line, font=font, fill=0)  # Black text
+            y_text += line_height
         
-        # Draw text
-        draw.text((0, 0), text, font=font, fill=0)  # Black text
         return ImageConverter.im2bmp(img)

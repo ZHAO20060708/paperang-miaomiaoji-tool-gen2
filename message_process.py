@@ -158,6 +158,11 @@ if __name__ == "__main__":
         mmj.sendPowerOffTimeToBt(0)
         font_size = 38
         text="miaomiaoji-tool\n[" + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()) + "]\nPAPERANG终端已连接\n等待用户输入\n>>>\n\n\n\n"
+        text="""○is_sensorRawDataReporting(bool) 返回当前设备是否需要主动上传传感器原始报文
+○uploadFileApiUrl(string) 返回当前的AI后端微服务基地址，方便设备调用相关API上传文件
+○uploadFileId(string) 返回传感器数据上传到微服务后，微服务返回的文件id
+○samplingRate(int) 返回当前传感器采样速率"""
+
         while(1):
             if (text==""):
                 # 换行
@@ -174,20 +179,8 @@ if __name__ == "__main__":
                     print(f"图片打印失败: {e}")
                 text=""
             else:
-                finalImg = b''
-                lineBuf = ""
-                for char in text:
-                    if (len((lineBuf + char).encode('gbk'))/2) >=576/font_size or (len(lineBuf) > 0 and lineBuf[-1]=="\n"):
-                        img = TextConverter.text2bmp(lineBuf, height=font_size , font_size=font_size)
-                        finalImg += img
-                        lineBuf = ""
-                    lineBuf += char
-
-                #清空打印缓存
-                if (len(lineBuf)):
-                    img = TextConverter.text2bmp(lineBuf, height=font_size , font_size=font_size)
-                    finalImg += img
-                mmj.sendImageToBt(finalImg)
+                img = TextConverter.text2bmp(text, font_size=font_size)
+                mmj.sendImageToBt(img)
             
             #捕获用户输入
             text = input("喵喵机2 >")
