@@ -125,7 +125,7 @@ class TextConverter:
     def text2bmp(text, font_size=24):
         # Use a monospace font
         mono_font_candidates = [
-            "HarmonyOS_Sans_SC_Regular.ttf"
+            "MapleMono-NF-CN-Light.ttf"
         ]
         
         font = ImageFont.load_default()

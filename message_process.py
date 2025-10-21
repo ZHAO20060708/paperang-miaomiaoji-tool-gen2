@@ -158,10 +158,6 @@ if __name__ == "__main__":
         mmj.sendPowerOffTimeToBt(0)
         font_size = 38
         text="miaomiaoji-tool\n[" + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()) + "]\nPAPERANG终端已连接\n等待用户输入\n>>>\n\n\n\n"
-        text="""○is_sensorRawDataReporting(bool) 返回当前设备是否需要主动上传传感器原始报文
-○uploadFileApiUrl(string) 返回当前的AI后端微服务基地址，方便设备调用相关API上传文件
-○uploadFileId(string) 返回传感器数据上传到微服务后，微服务返回的文件id
-○samplingRate(int) 返回当前传感器采样速率"""
 
         while(1):
             if (text==""):
