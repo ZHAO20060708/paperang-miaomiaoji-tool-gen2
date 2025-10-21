@@ -110,8 +110,11 @@ class ImageConverter:
             # 旋转90度以获得更好的打印效果
             original_img = original_img.rotate(-90, expand=True)
             
+        # 缩放到固定宽度576像素
+        resized_img = original_img.resize((576, int(original_img.height * 576 / original_img.width)), Image.LANCZOS)
+        
         # 应用Floyd-Steinberg扩散算法
-        dithered_img = ImageConverter.floyd_steinberg_dithering(original_img)
+        dithered_img = ImageConverter.floyd_steinberg_dithering(resized_img)
         
         # 转换为打印机可识别的数据格式
         bmp_data = ImageConverter.im2bmp(dithered_img)
