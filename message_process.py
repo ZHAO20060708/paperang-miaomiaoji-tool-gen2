@@ -149,15 +149,29 @@ def printImg(img_bytes):
 if __name__ == "__main__":
     logging.getLogger().setLevel(logging.INFO)
     # 打印使用提示
-    print("欢迎使用Paperang终端打印工具\n请输入图片路径或文字内容，支持jpg、png、bmp、gif、jpeg格式图片\n输入/selftest打印自检页")
+    help_text = """欢迎使用Paperang2终端打印工具@2025
+反馈邮箱：createskyblue@outlook.com
+项目地址：https://github.com/createskyblue/miaomiaoji-tool-gen2
+感谢：https://github.com/ihciah/miaomiaoji-tool
+字体来自：https://github.com/subframe7536/maple-font
+项目为MIT协议
+
+支持的指令:
+/selftest     - 打印自检页
+/fontsize <int> - 设置字体大小 (默认24)
+/help         - 显示此帮助信息
+
+请输入图片路径或文字内容，支持jpg、png、bmp、gif、jpeg格式图片
+"""
+    print(help_text)
 
     mmj = BtManager()
     if mmj.connected:
         mmj.registerCrcKeyToBt()
         mmj.sendDensityToBt(100)
         mmj.sendPowerOffTimeToBt(0)
-        font_size = 38
-        text="miaomiaoji-tool\n[" + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()) + "]\nPAPERANG终端已连接\n等待用户输入\n>>>\n\n\n\n"
+        font_size = 24
+        text="miaomiaoji-tool\n[" + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()) + "]\nPAPERANG终端已连接\n等待用户输入\n>>>\n\n\n\n\n\n"
 
         while(1):
             if (text==""):
@@ -166,6 +180,22 @@ if __name__ == "__main__":
             elif (text=="/selftest"):
                 mmj.sendSelfTestToBt()
                 text=""
+            elif text.startswith("/fontsize "):
+                try:
+                    new_font_size = int(text.split(" ")[1])
+                    if 8 <= new_font_size <= 72:
+                        font_size = new_font_size
+                        print(f"字体大小已设置为: {font_size}")
+                    else:
+                        print("字体大小应在8-72之间")
+                except ValueError:
+                    print("无效的字体大小，请输入数字")
+                except IndexError:
+                    print("请提供字体大小，例如: /fontsize 24")
+            elif text == "/help":
+                print(help_text)
+                img = TextConverter.text2bmp(help_text, font_size=font_size)
+                mmj.sendImageToBt(img)
             elif os.path.isfile(text) and any(text.lower().endswith(ext) for ext in ['.jpg', '.jpeg', '.png', '.bmp', '.gif', '.bmp']):
                 # 处理图片打印
                 try:
