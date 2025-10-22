@@ -1,5 +1,6 @@
 from PIL import Image, ImageDraw, ImageFont
 import numpy as np
+import qrcode
 
 class ImageConverter:
     def pre_process(im):
@@ -108,8 +109,14 @@ class ImageConverter:
             # 旋转90度以获得更好的打印效果
             original_img = original_img.rotate(-90, expand=True)
             
-        # 缩放到固定宽度576像素
-        resized_img = original_img.resize((576, int(original_img.height * 576 / original_img.width)), Image.LANCZOS)
+        # 只有当图像宽度大于576时才缩小，否则居中处理
+        if original_img.width > 576:
+            resized_img = original_img.resize((576, int(original_img.height * 576 / original_img.width)), Image.LANCZOS)
+        else:
+            # 宽度小于576时需要居中
+            resized_img = Image.new("L", (576, original_img.height), 255)  # 白色背景
+            paste_x = (576 - original_img.width) // 2
+            resized_img.paste(original_img, (paste_x, 0))
         
         # 应用Floyd-Steinberg扩散算法
         dithered_img = ImageConverter.floyd_steinberg_dithering(resized_img)
@@ -118,6 +125,42 @@ class ImageConverter:
         bmp_data = ImageConverter.im2bmp(dithered_img)
         
         return bmp_data
+
+    def generate_qr_code(qr_string):
+        """
+        生成二维码并转换为适合打印的二进制数据
+        
+        :param qr_string: 二维码内容字符串
+        :return: 处理后的二进制打印数据
+        """
+        # 生成二维码
+        qr = qrcode.QRCode(
+            version=1,
+            error_correction=qrcode.constants.ERROR_CORRECT_L,
+            box_size=4,
+            border=4,
+        )
+        qr.add_data(qr_string)
+        qr.make(fit=True)
+        qr_img = qr.make_image(fill_color="black", back_color="white")
+        
+        # 转换为二值图像
+        qr_img = qr_img.convert('1')
+        
+        # 如果输出的图像宽度不是576，如果小于576，生成一张宽度为576的空白图像然后把二维码放在中间
+        qr_width, qr_height = qr_img.size
+        if qr_width > 576:
+            raise ValueError("二维码太大无法打印")
+        elif qr_width != 576:
+            # 创建宽度为576的空白图像并将二维码居中
+            new_img = Image.new("1", (576, qr_height), 255)  # 白色背景
+            paste_x = (576 - qr_width) // 2
+            new_img.paste(qr_img, (paste_x, 0))
+            img_data = ImageConverter.im2bmp(new_img)
+        else:
+            img_data = ImageConverter.im2bmp(qr_img)
+            
+        return img_data
 
 class TextConverter:
     def text2bmp(text, font_size=24):
