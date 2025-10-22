@@ -25,7 +25,7 @@ class ImageConverter:
         return data
 
     def im2bmp(im):
-        im = ImageConverter.pre_process(im)
+        # im = ImageConverter.pre_process(im)
         # Convert to binary (black and white)
         im_binary = im.point(lambda x: 0 if x < 128 else 255, mode='1')
         
@@ -55,8 +55,6 @@ class ImageConverter:
         :param im: 输入的PIL图像对象
         :return: 处理后的扩散二值化图像
         """
-        # 预处理图像
-        im = ImageConverter.pre_process(im)
         
         # 转换为numpy数组进行处理
         img_array = np.array(im, dtype=np.float32)

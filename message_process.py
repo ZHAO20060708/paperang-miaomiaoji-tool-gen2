@@ -5,7 +5,7 @@ from const import BtCommandByte
 import serial
 import time
 import qrcode
-
+from PIL import Image
 class BtManager:
     max_send_msg_length = 1008 
     max_recv_msg_length = 1024
@@ -210,7 +210,21 @@ if __name__ == "__main__":
                         qr_img = qr.make_image(fill_color="black", back_color="white")
                         
                         # 转换为二值图像并打印（使用im2bmp方法）
-                        img_data = ImageConverter.im2bmp(qr_img)
+                        # 如果输出的图像宽度不是576，如果小于576，生成一张宽度为576的空白图像然后把二维码放在中间
+                        qr_width, qr_height = qr_img.size
+                        if qr_width > 576:
+                            print("二维码太大无法打印")
+                            text = ""
+                            continue
+                        elif qr_width != 576:
+                            # 创建宽度为576的空白图像并将二维码居中
+                            new_img = Image.new("1", (576, qr_height), 255)  # 白色背景
+                            paste_x = (576 - qr_width) // 2
+                            new_img.paste(qr_img, (paste_x, 0))
+                            img_data = ImageConverter.im2bmp(new_img)
+                        else:
+                            img_data = ImageConverter.im2bmp(qr_img)
+                            
                         mmj.sendImageToBt(img_data)
                     else:
                         print("请提供二维码内容，例如: /qrcode Hello World")
