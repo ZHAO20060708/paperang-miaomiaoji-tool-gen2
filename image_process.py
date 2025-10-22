@@ -112,6 +112,8 @@ class ImageConverter:
         # 只有当图像宽度大于576时才缩小，否则居中处理
         if original_img.width > 576:
             resized_img = original_img.resize((576, int(original_img.height * 576 / original_img.width)), Image.LANCZOS)
+            #转灰度
+            resized_img = resized_img.convert('L')
         else:
             # 宽度小于576时需要居中
             resized_img = Image.new("L", (576, original_img.height), 255)  # 白色背景
