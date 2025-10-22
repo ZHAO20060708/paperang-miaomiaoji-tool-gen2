@@ -4,6 +4,7 @@ import os
 from const import BtCommandByte
 import serial
 import time
+import qrcode
 
 class BtManager:
     max_send_msg_length = 1008 
@@ -159,6 +160,7 @@ if __name__ == "__main__":
 支持的指令:
 /selftest     - 打印自检页
 /fontsize <int> - 设置字体大小 (默认24)
+/qrcode <string> - 生成并打印二维码
 /help         - 显示此帮助信息
 
 请输入图片路径或文字内容，支持jpg、png、bmp、gif、jpeg格式图片
@@ -172,7 +174,7 @@ if __name__ == "__main__":
         mmj.sendPowerOffTimeToBt(0)
         font_size = 24
         text="miaomiaoji-tool\n[" + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()) + "]\nPAPERANG终端已连接\n等待用户输入\n>>>\n\n\n\n\n\n"
-
+        text=""
         while(1):
             if (text==""):
                 # 换行
@@ -192,6 +194,29 @@ if __name__ == "__main__":
                     print("无效的字体大小，请输入数字")
                 except IndexError:
                     print("请提供字体大小，例如: /fontsize 24")
+            elif text.startswith("/qrcode "):
+                try:
+                    qr_string = text[8:]  # 提取二维码内容
+                    if qr_string:
+                        # 生成二维码
+                        qr = qrcode.QRCode(
+                            version=1,
+                            error_correction=qrcode.constants.ERROR_CORRECT_L,
+                            box_size=4,
+                            border=4,
+                        )
+                        qr.add_data(qr_string)
+                        qr.make(fit=True)
+                        qr_img = qr.make_image(fill_color="black", back_color="white")
+                        
+                        # 转换为二值图像并打印（使用im2bmp方法）
+                        img_data = ImageConverter.im2bmp(qr_img)
+                        mmj.sendImageToBt(img_data)
+                    else:
+                        print("请提供二维码内容，例如: /qrcode Hello World")
+                except Exception as e:
+                    print(f"二维码生成失败: {e}")
+                text=""
             elif text == "/help":
                 print(help_text)
                 img = TextConverter.text2bmp(help_text, font_size=font_size)

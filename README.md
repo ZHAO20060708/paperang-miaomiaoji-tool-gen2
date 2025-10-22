@@ -9,6 +9,7 @@
 - 支持使用Windows 蓝牙串口SPP功能
 - 文本打印（支持中英文）
 - 图像打印（支持自动旋转、缩放和Floyd-Steinberg扩散算法二值化）
+- 二维码生成与打印
 - 设备状态查询（电量、SN等）
 
 ## 项目结构
@@ -25,7 +26,7 @@
 ## 安装依赖
 
 ```bash
-pip install numpy pillow
+pip install numpy pillow qrcode
 ```
 
 ## Windows下蓝牙连接配置指南
@@ -85,7 +86,20 @@ python message_process.py
 3. 应用Floyd-Steinberg扩散算法进行高质量二值化
 4. 发送到喵喵机打印
 
+### 二维码生成与打印
+
+使用`/qrcode`命令可以生成并打印二维码：
+
+```
+喵喵机2 >/qrcode Hello World
+```
+
+这将在喵喵机上打印包含"Hello World"文本的二维码。
+
 ### 特殊命令
 
 - 输入 `/selftest` 执行自检打印
+- 输入 `/fontsize <数字>` 设置字体大小（8-72之间）
+- 输入 `/qrcode <内容>` 生成并打印二维码
+- 输入 `/help` 显示帮助信息
 - 直接按回车换行
