@@ -3,6 +3,9 @@ import numpy as np
 import qrcode
 
 class ImageConverter:
+    # 添加默认模式
+    current_mode = "auto"
+    
     def pre_process(im):
         fixed_width = 576
         # Convert to grayscale if needed
@@ -86,12 +89,59 @@ class ImageConverter:
         result_img = Image.fromarray(img_array.astype(np.uint8), mode='L')
         return result_img
 
-    def process_image_for_printing(image_path):
+    def adaptive_threshold(im):
         """
-        自动处理图像以适应打印机要求：自动旋转、缩放到合适尺寸，
-        应用Floyd-Steinberg扩散算法，并转换为打印机可识别的数据格式
+        使用自适应阈值算法进行二值化处理
+        :param im: 输入的PIL图像对象
+        :return: 处理后的自适应二值化图像
+        """
+        # 转换为numpy数组
+        img_array = np.array(im)
+        
+        # 使用局部自适应阈值处理
+        # 计算局部均值作为阈值参考
+        window_size = 15
+        half_window = window_size // 2
+        
+        # 添加padding
+        padded_img = np.pad(img_array, ((half_window, half_window), (half_window, half_window)), mode='reflect')
+        
+        # 初始化输出数组
+        output = np.zeros_like(img_array)
+        height, width = img_array.shape
+        
+        # 对每个像素计算局部阈值
+        for y in range(height):
+            for x in range(width):
+                # 获取局部区域
+                local_region = padded_img[y:y+window_size, x:x+window_size]
+                # 计算局部均值
+                local_mean = np.mean(local_region)
+                # 设置阈值为局部均值减去一个常数
+                threshold = local_mean - 5  # 减去一个小常数以增强对比度
+                # 应用阈值
+                output[y, x] = 0 if img_array[y, x] < threshold else 255
+                
+        return Image.fromarray(output.astype(np.uint8), mode='L')
+
+    def count_black_pixels(im):
+        """
+        计算图像中的黑色像素数量
+        :param im: 输入的PIL图像对象
+        :return: 黑色像素的数量
+        """
+        # 转换为二值图像
+        binary_img = im.point(lambda x: 0 if x < 128 else 255, mode='1')
+        # 转换为numpy数组并计数
+        img_array = np.array(binary_img)
+        return np.sum(img_array == 0)  # 统计黑色像素(0)的数量
+
+    def process_image_for_printing_with_mode(image_path, mode="auto"):
+        """
+        根据指定模式处理图像以适应打印机要求
         
         :param image_path: 图像文件路径
+        :param mode: 图像处理模式 ("auto", "floyd", "adaptive")
         :return: 处理后的二进制打印数据
         """
         # 打开图像
@@ -120,13 +170,29 @@ class ImageConverter:
             paste_x = (576 - original_img.width) // 2
             resized_img.paste(original_img, (paste_x, 0))
         
-        # 应用Floyd-Steinberg扩散算法
-        dithered_img = ImageConverter.floyd_steinberg_dithering(resized_img)
+        # 根据模式选择处理方法
+        if mode == "floyd" or mode == "f":
+            # 直接使用Floyd-Steinberg扩散算法
+            processed_img = ImageConverter.floyd_steinberg_dithering(resized_img)
+        elif mode == "adaptive" or mode == "a":
+            # 直接使用自适应二值化算法
+            processed_img = ImageConverter.adaptive_threshold(resized_img)
         
         # 转换为打印机可识别的数据格式
-        bmp_data = ImageConverter.im2bmp(dithered_img)
+        bmp_data = ImageConverter.im2bmp(processed_img)
         
         return bmp_data
+
+    def process_image_for_printing(image_path):
+        """
+        自动处理图像以适应打印机要求：自动旋转、缩放到合适尺寸，
+        应用Floyd-Steinberg扩散算法和自适应二值化算法，比较结果并选择黑色像素较少的
+        
+        :param image_path: 图像文件路径
+        :return: 处理后的二进制打印数据
+        """
+        # 为了向后兼容，仍然保留这个函数，默认使用auto模式
+        return ImageConverter.process_image_for_printing_with_mode(image_path, "auto")
 
     def generate_qr_code(qr_string):
         """

@@ -6,6 +6,10 @@ import serial
 import time
 import qrcode
 from PIL import Image
+
+# 添加全局变量来存储图像处理模式
+image_process_mode = "floyd"  # 默认使用扩散模式
+
 class BtManager:
     max_send_msg_length = 1008 
     max_recv_msg_length = 1024
@@ -161,6 +165,7 @@ if __name__ == "__main__":
 /selftest     - 打印自检页
 /fontsize <int> - 设置字体大小 (默认24)
 /qrcode <string> - 生成并打印二维码
+/imgmode <mode> - 设置图像处理模式  floyd(缩写f，代表扩散) 或 adaptive(缩写a，代表自适应二值化)
 /help         - 显示此帮助信息
 
 请输入图片路径或文字内容，支持jpg、png、bmp、gif、jpeg格式图片
@@ -194,6 +199,19 @@ if __name__ == "__main__":
                     print("无效的字体大小，请输入数字")
                 except IndexError:
                     print("请提供字体大小，例如: /fontsize 24")
+            elif text.startswith("/imgmode "):
+                try:
+                    mode = text.split(" ")[1].lower()
+                    if mode in ["floyd", "adaptive", "f", "a"]:
+                        image_process_mode = mode
+                        print(f"图像处理模式已设置为: {mode}")
+                        # 更新ImageConverter中的处理模式
+                        ImageConverter.current_mode = mode
+                    else:
+                        print("无效的图像处理模式，请使用 floyd(f) 或 adaptive(a)")
+                except IndexError:
+                    print("请提供图像处理模式，例如: /imgmode f")
+                text=""
             elif text.startswith("/qrcode "):
                 try:
                     qr_string = text[8:]  # 提取二维码内容
@@ -213,7 +231,8 @@ if __name__ == "__main__":
             elif os.path.isfile(text) and any(text.lower().endswith(ext) for ext in ['.jpg', '.jpeg', '.png', '.bmp', '.gif', '.bmp']):
                 # 处理图片打印
                 try:
-                    img_data = ImageConverter.process_image_for_printing(text)
+                    # 根据当前模式处理图像
+                    img_data = ImageConverter.process_image_for_printing_with_mode(text, image_process_mode)
                     mmj.sendImageToBt(img_data)
                 except Exception as e:
                     print(f"图片打印失败: {e}")
