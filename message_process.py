@@ -1,27 +1,36 @@
 from image_process import TextConverter, ImageConverter
 import struct, zlib, logging
 import os
+import sys
 from const import BtCommandByte
 import serial
 import time
-import qrcode
-from PIL import Image
 
 # 添加全局变量来存储图像处理模式
 image_process_mode = "floyd"  # 默认使用扩散模式
 
+
 class BtManager:
-    max_send_msg_length = 1008 
+    max_send_msg_length = 1008
     max_recv_msg_length = 1024
     standardKey = 0x00000000
 
-    def __init__(self, address=None):
+    def __init__(self, cfg):
         self.crckeyset = False
+        self.cfg = cfg
         self.connected = True if self.connect() else False
 
     def connect(self):
-        self.sock = serial.Serial('COM10', 115200, timeout=1)
-        return True
+        try:
+            self.sock = serial.Serial(
+                self.cfg["serial_port"],
+                self.cfg.get("baudrate", 115200),
+                timeout=self.cfg.get("timeout", 1)
+            )
+            return True
+        except Exception as e:
+            logging.error(f"串口连接失败: {e}")
+            return False
 
     def disconnect(self):
         try:
@@ -30,12 +39,10 @@ class BtManager:
             pass
         logging.info("Disconnected.")
 
-
     def sendMsgAllPackage(self, msg):
         sent_len = 0
         for i in range(0, len(msg), self.max_send_msg_length):
             sent_len += self.sock.write(msg[i:i+self.max_send_msg_length])
-
 
     def crc32(self, content):
         return zlib.crc32(content, self.crcKey if self.crckeyset else self.standardKey)
@@ -47,7 +54,6 @@ class BtManager:
         result += struct.pack('<I', self.crc32(bytes))
         result += struct.pack('<B', 3)
         return result
-
 
     def addBytesToList(self, bytes):
         length = self.max_send_msg_length
@@ -63,15 +69,8 @@ class BtManager:
             return self.recv()
 
     def recv(self):
-        # Here we assume that there is only one received packet.
-        # raw_msg = self.sock.recv(self.max_recv_msg_length)
-        # parsed = self.resultParser(raw_msg)
-        # logging.info("Recv: " + raw_msg.encode('hex'))
-        # logging.info("Received %d packets: " % len(parsed) + "".join([str(p) for p in parsed]))
-        # return raw_msg, parsed
         pass
 
-    
     def resultParser(self, data):
         base = 0
         res = []
@@ -94,9 +93,6 @@ class BtManager:
         self.sendMsgAllPackage(bytes.fromhex("0218000400219576351cdf442103"))
 
     def sendPaperTypeToBt(self, paperType=0):
-        # My guess:
-        # paperType=0: normal paper
-        # paperType=1: official paper
         msg = struct.pack('<B', paperType)
         self.sendToBt(msg, BtCommandByte.PRT_SET_PAPER_TYPE)
 
@@ -145,16 +141,33 @@ class BtManager:
         msg = struct.pack('<B', 1)
         self.sendToBt(msg, BtCommandByte.PRT_GET_HW_INFO)
 
-def printImg(img_bytes):
-    for i in range(0, len(img_bytes)*8):
-        print("*" if img_bytes[i//8]>>(7-(i%8))&0x01 == 1 else ".", end="")
-        if (i+1)%384==0:
-            print("|")
-            
-if __name__ == "__main__":
-    logging.getLogger().setLevel(logging.INFO)
-    # 打印使用提示
-    help_text = """欢迎使用Paperang2终端打印工具@2025
+
+class PrinterCLI:
+    def __init__(self, mmj):
+        self.mmj = mmj
+        self.font_size = 24
+
+    def run(self):
+        help_text = self._help_text()
+        print(help_text)
+
+        if self.mmj.connected:
+            self.mmj.registerCrcKeyToBt()
+            self.mmj.sendDensityToBt(100)
+            self.mmj.sendPowerOffTimeToBt(0)
+            text = ""
+            while True:
+                self._process_text(text)
+                try:
+                    text = input("喵喵机2 > ").strip()
+                except (EOFError, KeyboardInterrupt):
+                    print("\n退出。")
+                    break
+        else:
+            logging.error("Oops! Cannot establish connection with Paperang devices.")
+
+    def _help_text(self):
+        return """欢迎使用Paperang2终端打印工具@2025
 反馈邮箱：createskyblue@outlook.com
 项目地址：https://github.com/createskyblue/miaomiaoji-tool-gen2
 感谢：https://github.com/ihciah/miaomiaoji-tool
@@ -162,86 +175,91 @@ if __name__ == "__main__":
 项目为MIT协议
 
 支持的指令:
-/selftest     - 打印自检页
-/fontsize <int> - 设置字体大小 (默认24)
+/selftest        - 打印自检页
+/fontsize <int>  - 设置字体大小 (默认24)
 /qrcode <string> - 生成并打印二维码
-/imgmode <mode> - 设置图像处理模式  floyd(缩写f，代表扩散) 或 adaptive(缩写a，代表自适应二值化)
-/help         - 显示此帮助信息
+/imgmode <mode>  - 设置图像处理模式  floyd(缩写f) 或 adaptive(缩写a)
+/help            - 显示此帮助信息
 
 请输入图片路径或文字内容，支持jpg、png、bmp、gif、jpeg格式图片
 """
-    print(help_text)
 
-    mmj = BtManager()
-    if mmj.connected:
-        mmj.registerCrcKeyToBt()
-        mmj.sendDensityToBt(100)
-        mmj.sendPowerOffTimeToBt(0)
-        font_size = 24
-        text="miaomiaoji-tool\n[" + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()) + "]\nPAPERANG终端已连接\n等待用户输入\n>>>\n\n\n\n\n\n"
-        text=""
-        while(1):
-            if (text==""):
-                # 换行
-                mmj.sendFeedLineToBt(25)
-            elif (text=="/selftest"):
-                mmj.sendSelfTestToBt()
-                text=""
-            elif text.startswith("/fontsize "):
-                try:
-                    new_font_size = int(text.split(" ")[1])
-                    if 8 <= new_font_size <= 72:
-                        font_size = new_font_size
-                        print(f"字体大小已设置为: {font_size}")
-                    else:
-                        print("字体大小应在8-72之间")
-                except ValueError:
-                    print("无效的字体大小，请输入数字")
-                except IndexError:
-                    print("请提供字体大小，例如: /fontsize 24")
-            elif text.startswith("/imgmode "):
-                try:
-                    mode = text.split(" ")[1].lower()
-                    if mode in ["floyd", "adaptive", "f", "a"]:
-                        image_process_mode = mode
-                        print(f"图像处理模式已设置为: {mode}")
-                        # 更新ImageConverter中的处理模式
-                        ImageConverter.current_mode = mode
-                    else:
-                        print("无效的图像处理模式，请使用 floyd(f) 或 adaptive(a)")
-                except IndexError:
-                    print("请提供图像处理模式，例如: /imgmode f")
-                text=""
-            elif text.startswith("/qrcode "):
-                try:
-                    qr_string = text[8:]  # 提取二维码内容
-                    if qr_string:
-                        # 使用ImageConverter生成二维码
-                        img_data = ImageConverter.generate_qr_code(qr_string)
-                        mmj.sendImageToBt(img_data)
-                    else:
-                        print("请提供二维码内容，例如: /qrcode Hello World")
-                except Exception as e:
-                    print(f"二维码生成失败: {e}")
-                text=""
-            elif text == "/help":
-                print(help_text)
-                img = TextConverter.text2bmp(help_text, font_size=font_size)
-                mmj.sendImageToBt(img)
-            elif os.path.isfile(text) and any(text.lower().endswith(ext) for ext in ['.jpg', '.jpeg', '.png', '.bmp', '.gif', '.bmp']):
-                # 处理图片打印
-                try:
-                    # 根据当前模式处理图像
-                    img_data = ImageConverter.process_image_for_printing_with_mode(text, image_process_mode)
-                    mmj.sendImageToBt(img_data)
-                except Exception as e:
-                    print(f"图片打印失败: {e}")
-                text=""
+    def _process_text(self, text):
+        global image_process_mode
+        if text == "":
+            self.mmj.sendFeedLineToBt(25)
+        elif text == "/selftest":
+            self.mmj.sendSelfTestToBt()
+        elif text.startswith("/fontsize "):
+            self._set_fontsize(text)
+        elif text.startswith("/imgmode "):
+            image_process_mode = self._set_imgmode(text) or image_process_mode
+        elif text.startswith("/qrcode "):
+            self._print_qrcode(text)
+        elif text == "/help":
+            print(self._help_text())
+            img = TextConverter.text2bmp(self._help_text(), font_size=self.font_size)
+            self.mmj.sendImageToBt(img)
+        elif os.path.isfile(text) and any(text.lower().endswith(ext) for ext in ['.jpg', '.jpeg', '.png', '.bmp', '.gif']):
+            self._print_image(text)
+        elif text:
+            img = TextConverter.text2bmp(text, font_size=self.font_size)
+            self.mmj.sendImageToBt(img)
+
+    def _set_fontsize(self, text):
+        try:
+            new_font_size = int(text.split(" ")[1])
+            if 8 <= new_font_size <= 72:
+                self.font_size = new_font_size
+                print(f"字体大小已设置为: {self.font_size}")
             else:
-                img = TextConverter.text2bmp(text, font_size=font_size)
-                mmj.sendImageToBt(img)
-            
-            #捕获用户输入
-            text = input("喵喵机2 >")
-    else:
-        logging.error("Oops! Cannot establish connection with Paperang devices.")
+                print("字体大小应在8-72之间")
+        except (ValueError, IndexError):
+            print("无效的字体大小，例如: /fontsize 24")
+
+    def _set_imgmode(self, text):
+        try:
+            mode = text.split(" ")[1].lower()
+            if mode in ["floyd", "adaptive", "f", "a"]:
+                print(f"图像处理模式已设置为: {mode}")
+                ImageConverter.current_mode = mode
+                return mode
+            else:
+                print("无效的图像处理模式，请使用 floyd(f) 或 adaptive(a)")
+        except IndexError:
+            print("请提供图像处理模式，例如: /imgmode f")
+        return None
+
+    def _print_qrcode(self, text):
+        try:
+            qr_string = text[8:].strip()
+            if qr_string:
+                img_data = ImageConverter.generate_qr_code(qr_string)
+                self.mmj.sendImageToBt(img_data)
+            else:
+                print("请提供二维码内容，例如: /qrcode Hello World")
+        except Exception as e:
+            print(f"二维码生成失败: {e}")
+
+    def _print_image(self, image_path):
+        try:
+            img_data = ImageConverter.process_image_for_printing_with_mode(image_path, image_process_mode)
+            self.mmj.sendImageToBt(img_data)
+        except Exception as e:
+            print(f"图片打印失败: {e}")
+
+
+def printImg(img_bytes):
+    for i in range(0, len(img_bytes)*8):
+        print("*" if img_bytes[i//8]>>(7-(i%8))&0x01 == 1 else ".", end="")
+        if (i+1)%384==0:
+            print("|")
+
+
+if __name__ == "__main__":
+    from config import setup_config
+    logging.getLogger().setLevel(logging.INFO)
+    cfg = setup_config()
+    mmj = BtManager(cfg)
+    cli = PrinterCLI(mmj)
+    cli.run()
