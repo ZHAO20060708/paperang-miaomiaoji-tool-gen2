@@ -2,7 +2,7 @@ import json
 import os
 import serial.tools.list_ports
 
-CONFIG_FILE = "config.json"
+CONFIG_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.json")
 
 DEFAULT_CONFIG = {
     "serial_port": None,
