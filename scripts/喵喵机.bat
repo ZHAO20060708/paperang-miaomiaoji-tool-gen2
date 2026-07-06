@@ -1,5 +1,9 @@
 @echo off
 chcp 65001 >nul
+
+REM 定位到项目根目录（脚本在 scripts/ 下，往上一级）
+cd /d "%~dp0.."
+
 echo ========================================
 echo   喵喵机2 Paperang 打印工具
 echo ========================================
@@ -7,15 +11,18 @@ echo.
 echo   [1] 交互模式（手动输入打印内容）
 echo   [2] 命令行模式（查看帮助）
 echo   [3] 打印自检页
+echo   [4] 安装/更新依赖
 echo.
-set /p choice="请选择 (1/2/3): "
+set /p choice="请选择 (1/2/3/4): "
 
 if "%choice%"=="1" (
-    python -m paperang interactive
+    uv run python -m paperang interactive
 ) else if "%choice%"=="2" (
-    python -m paperang --help
+    uv run python -m paperang --help
 ) else if "%choice%"=="3" (
-    python -m paperang selftest
+    uv run python -m paperang selftest
+) else if "%choice%"=="4" (
+    uv sync
 ) else (
     echo 无效选择
 )
