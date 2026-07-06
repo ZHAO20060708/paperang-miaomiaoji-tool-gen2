@@ -10,6 +10,8 @@ description: >-
 
 **IRON LAW: 执行打印前必须确认串口已配置（config.json 存在且有效）。绝不猜测串口号；首次使用必须引导用户完成串口配置。检查方法：`uv run python -m paperang config`。**
 
+**FEED RULE: 单次打印（只打一条）→ 必须加 `--feed 250` 把内容推到可见区域。连续打印（多条）→ 中间不加 feed，最后一条命令 `&& uv run python -m paperang feed 250`。打印完看不到内容就是忘了走纸。**
+
 ## Workflow checklist
 
 每次打印任务按以下步骤执行：
