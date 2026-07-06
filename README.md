@@ -13,6 +13,8 @@
 A Python tool for controlling the **Paperang 2** portable Bluetooth thermal printer. Supports both a
 **CLI mode** (for scripts / AI agents) and an **interactive mode** (for direct human use).
 
+![实拍效果](img/PixPin_2026-07-06_22-24-31.jpg)
+
 ---
 
 ## ✨ 功能特性 / Features
