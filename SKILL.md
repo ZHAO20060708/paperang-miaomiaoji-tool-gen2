@@ -131,6 +131,9 @@ uv run python -m paperang image assets/test_image.jpg
 
 # 5. 欢迎文本
 uv run python -m paperang text --font-size 42 "欢迎使用喵喵机!\nWelcome to Paperang!"
+
+# 6. 最后统一走纸，把内容推到可见区域
+uv run python -m paperang feed 250
 ```
 
 ### Subsequent sessions

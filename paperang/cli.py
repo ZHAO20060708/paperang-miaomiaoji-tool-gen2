@@ -123,7 +123,7 @@ def main():
     p_text = subparsers.add_parser("text", help="打印文字")
     p_text.add_argument("text", help="要打印的文字内容")
     p_text.add_argument("--font-size", type=int, default=24, help="字体大小 (默认24)")
-    p_text.add_argument("--feed", type=int, default=250, help="打印后走纸长度 (默认250)")
+    p_text.add_argument("--feed", type=int, default=0, help="打印后走纸长度，连续打印时设为0，最后统一走纸")
     p_text.set_defaults(func=cmd_text)
 
     # image
@@ -131,13 +131,13 @@ def main():
     p_img.add_argument("path", help="图片路径")
     p_img.add_argument("--mode", choices=["floyd", "adaptive", "f", "a"], default="floyd",
                        help="图像处理模式 (默认floyd)")
-    p_img.add_argument("--feed", type=int, default=250, help="打印后走纸长度 (默认250)")
+    p_img.add_argument("--feed", type=int, default=0, help="打印后走纸长度，连续打印时设为0，最后统一走纸")
     p_img.set_defaults(func=cmd_image)
 
     # qrcode
     p_qr = subparsers.add_parser("qrcode", help="打印二维码")
     p_qr.add_argument("text", help="二维码内容")
-    p_qr.add_argument("--feed", type=int, default=250, help="打印后走纸长度 (默认250)")
+    p_qr.add_argument("--feed", type=int, default=0, help="打印后走纸长度，连续打印时设为0，最后统一走纸")
     p_qr.set_defaults(func=cmd_qrcode)
 
     # selftest
