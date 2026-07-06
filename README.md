@@ -1,105 +1,190 @@
-# 喵喵机2工具
+> 🤖 **AI assistants:** 请先阅读 [SKILL.md](SKILL.md) 了解如何与本项目交互。
+> *AI assistants: read [SKILL.md](SKILL.md) first for instructions on using this project.*
 
-> 本项目基于[ihciah的喵喵机工具](https://github.com/ihciah/miaomiaoji-tool)进行适配，专门针对喵喵机2代设备进行了优化，并增加了交互式控制功能。
+# 🖨️ Paperang 2 喵喵机工具
 
-一个用于控制喵喵机2代(Paperang2)便携式打印机的Python工具集，支持文本和图像打印功能。
+[![License](https://img.shields.io/github/license/createskyblue/paperang-miaomiaoji-tool-gen2)](LICENSE)
+[![Python](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/)
+[![Platform](https://img.shields.io/badge/platform-Windows-blue.svg)]()
 
-## 功能特性
+> 基于 [ihciah/paperang-miaomiaoji-tool](https://github.com/ihciah/miaomiaoji-tool) 适配，专为 **喵喵机2代 (Paperang 2)** 优化的蓝牙打印工具。
+> 支持 **命令行模式**（适合脚本/AI 调用）与 **交互式模式**（适合人工直接使用）。
 
-- 支持使用Windows 蓝牙串口SPP功能
-- 文本打印（支持中英文）
-- 图像打印（支持自动旋转、缩放和Floyd-Steinberg扩散算法二值化）
-- 二维码生成与打印
-- 设备状态查询（电量、SN等）
+A Python tool for controlling the **Paperang 2** portable Bluetooth thermal printer. Supports both a
+**CLI mode** (for scripts / AI agents) and an **interactive mode** (for direct human use).
 
-## 项目结构
+---
 
-```
-.
-├── README.md                  # 项目说明文档
-├── const.py                   # 蓝牙通信常量定义
-├── image_process.py           # 图像处理模块
-├── message_process.py         # 消息处理和蓝牙通信模块
-└── 喵喵机.bat                 # Windows启动脚本
-```
+## ✨ 功能特性 / Features
 
-## 安装依赖
+- 🔤 **文本打印** — 支持中英文，可调字体大小（8–72pt），集成 MapleMono 等宽字体
+- 🖼️ **图片打印** — 自动旋转、缩放至 576px 宽度，支持 Floyd-Steinberg 扩散二值化与自适应阈值两种模式
+- 📱 **二维码打印** — 一键生成并打印二维码
+- ⚙️ **设备控制** — 自检打印、走纸、浓度调节、自动关机时间设置
+- 💻 **双模式** — `python -m paperang <command>` 命令行 + `python -m paperang interactive` 交互式
+- 🤖 **Claude Code Skill** — 附带 `SKILL.md`，可直接作为 `/paperang` skill 使用
 
-```bash
-pip install numpy pillow qrcode
-```
+---
 
-## Windows下蓝牙连接配置指南
+## 📦 安装 / Installation
 
-要在Windows系统下使用本工具连接喵喵机，请按以下步骤操作：
-
-1. 确保电脑蓝牙功能已开启，长按喵喵机电源键开机，直至指示灯闪烁
-
-2. 在Windows设置中配对蓝牙设备：
-   - 打开"设置" → "设备" → "蓝牙和其他设备"
-   - 点击"添加蓝牙或其他设备"，选择"蓝牙"
-   - 在设备列表中找到并选择您的喵喵机进行配对
-
-3. 配置蓝牙串口连接：
-   - 右键"此电脑" → "管理" → "设备管理器"
-   - 展开"端口(COM和LPT)"，找到类似"标准串行端口"的设备
-   - 双击打开属性，切换到"端口设置"标签页，点击"高级"
-   - 记下分配的COM端口号（如COM10）
-
-4. 修改代码中的端口号：
-   - 打开`message_process.py`文件
-   - 找到`serial.Serial('COM10', 115200, timeout=1)`这一行
-   - 将'COM10'替换为您在上一步中记下的COM端口号
-
-![alt text](img/PixPin_2025-10-22_00-16-01.png)
-![alt text](img/PixPin_2025-10-22_00-16-06.png)
-![alt text](img/PixPin_2025-10-22_00-16-15.png)
-![alt text](img/PixPin_2025-10-22_00-16-25.png)
-![alt text](img/PixPin_2025-10-22_00-16-30.png)
-![alt text](img/PixPin_2025-10-22_00-17-06.png)
-
-## 使用方法
-
-### 基本文本打印
-
-直接运行主程序进行文本打印交互：
+> 🤖 **懒得手动装？** 把仓库链接丢给 AI 助手（Claude Code / Cursor / Copilot 等），它会根据 `SKILL.md` 自动帮你完成安装和配置。
+> *Too lazy? Paste the repo URL into your AI coding assistant and it'll set everything up for you.*
 
 ```bash
-python message_process.py
+# 1. 克隆仓库
+git clone https://github.com/createskyblue/paperang-miaomiaoji-tool-gen2.git
+cd paperang-miaomiaoji-tool-gen2
+
+# 2. 使用 uv 安装依赖（推荐）
+uv sync
+
+# 或使用 pip
+pip install -r requirements.txt
 ```
 
-在程序运行后，可以输入要打印的文本内容，按回车发送到喵喵机打印。
+> 💡 推荐使用 [uv](https://docs.astral.sh/uv/) 管理虚拟环境和依赖。首次使用需 `pip install uv`。
+> 使用 uv 后，所有命令前加 `uv run`，如 `uv run python -m paperang config --list`。
 
-### 图像打印
+---
 
-在程序运行时，可以输入图片文件的完整路径来打印图片：
+## 🔵 Windows 蓝牙配置 / Bluetooth Setup
 
-```
-喵喵机2 >C:\images\photo.jpg
-```
+1. 开启电脑蓝牙，长按喵喵机电源键至指示灯闪烁
+2. **设置** → **设备** → **蓝牙和其他设备** → 添加蓝牙设备 → 配对喵喵机
+3. **设置** → **蓝牙和其他设备** → **更多蓝牙选项** → **COM 端口** 标签页 → 点击"添加" → 选择"传出（你的计算机启动连接）" → 浏览并选择名称含 **PAPERANG** 的设备 → 记下分配的 COM 端口号（如 `COM10`）
+4. 配置工具：
 
-支持的图片格式包括：JPG、PNG、BMP、GIF。
-
-图像处理流程：
-1. 自动检测最佳旋转方向
-2. 缩放到适合打印的尺寸（宽度576像素）
-3. 应用Floyd-Steinberg扩散算法进行高质量二值化
-4. 发送到喵喵机打印
-
-### 二维码生成与打印
-
-使用`/qrcode`命令可以生成并打印二维码：
-
-```
-喵喵机2 >/qrcode Hello World
+```bash
+python -m paperang config --list              # 列出可用串口
+python -m paperang config --set-port COM10    # 设置端口（仅需一次）
 ```
 
-这将在喵喵机上打印包含"Hello World"文本的二维码。
+![蓝牙设置步骤1](img/PixPin_2025-10-22_00-16-01.png)
+![蓝牙设置步骤2](img/PixPin_2025-10-22_00-16-06.png)
+![蓝牙设置步骤3](img/PixPin_2025-10-22_00-16-15.png)
+![蓝牙设置步骤4](img/PixPin_2025-10-22_00-16-25.png)
+![蓝牙设置步骤5](img/PixPin_2025-10-22_00-16-30.png)
+![蓝牙设置步骤6](img/PixPin_2025-10-22_00-17-06.png)
 
-### 特殊命令
+---
 
-- 输入 `/selftest` 执行自检打印
-- 输入 `/fontsize <数字>` 设置字体大小（8-72之间）
-- 输入 `/qrcode <内容>` 生成并打印二维码
-- 输入 `/help` 显示帮助信息
-- 直接按回车换行
+## 🚀 使用方式 / Usage
+
+### 命令行模式 / CLI Mode
+
+> 适合脚本、自动化、AI agent 调用。每个命令连接 → 打印 → 断开。
+
+```bash
+# 打印文字
+python -m paperang text "你好，世界！"
+python -m paperang text --font-size 48 "大标题"
+python -m paperang text "Line1\nLine2"              # \n 换行
+
+# 打印图片
+python -m paperang image photo.jpg
+python -m paperang image --mode adaptive drawing.png  # 文档/线条图推荐 adaptive
+
+# 打印二维码
+python -m paperang qrcode "https://github.com"
+
+# 自检页
+python -m paperang selftest
+
+# 走纸
+python -m paperang feed 100
+
+# 查看/修改配置
+python -m paperang config --list
+python -m paperang config --set-port COM10
+python -m paperang config                            # 查看当前配置
+```
+
+### 交互式模式 / Interactive Mode
+
+> 适合人工直接使用，启动后可持续输入。
+
+```bash
+python -m paperang interactive
+# 或直接运行:
+python paperang/interactive.py
+```
+
+交互式模式下支持的指令：
+
+| 指令 | 说明 |
+|---|---|
+| 直接输入文字 | 打印文字内容 |
+| 输入图片路径 | 打印图片（支持 jpg/png/bmp/gif） |
+| `/selftest` | 打印自检页 |
+| `/fontsize 32` | 设置字体大小（8–72） |
+| `/qrcode <内容>` | 生成并打印二维码 |
+| `/imgmode floyd` | 图像模式：扩散二值化（照片推荐） |
+| `/imgmode adaptive` | 图像模式：自适应阈值（文档推荐） |
+| `/help` | 显示帮助 |
+| 直接回车 | 走纸 25 单位 |
+
+### Windows 一键启动
+
+双击 `scripts/喵喵机.bat`，可选择交互模式 / 命令行帮助 / 自检打印。
+
+---
+
+## 📁 项目结构 / Project Structure
+
+```
+paperang-miaomiaoji-tool-gen2/
+├── paperang/                     # Python 包
+│   ├── __init__.py               # 版本信息
+│   ├── __main__.py               # python -m paperang 入口
+│   ├── cli.py                    # 命令行界面（argparse）
+│   ├── bt.py                     # 蓝牙串口通信管理
+│   ├── config.py                 # 配置读写、串口扫描
+│   ├── const.py                  # 蓝牙协议常量
+│   ├── image.py                  # 图像处理（二值化/缩放/二维码）
+│   ├── text.py                   # 文字转位图
+│   └── interactive.py            # 交互式终端界面
+├── assets/                       # 静态资源
+│   ├── MapleMono-NF-CN-Light.ttf # 等宽字体
+│   └── test_image.jpg            # 测试图片
+├── img/                          # 文档截图
+├── scripts/
+│   └── 喵喵机.bat                # Windows 启动脚本
+├── SKILL.md                      # Claude Code Skill 定义
+├── requirements.txt
+├── README.md
+├── LICENSE
+└── .gitignore
+```
+
+---
+
+## 🤖 Claude Code Skill
+
+本项目根目录下的 `SKILL.md` 是 Claude Code skill 定义文件。
+在 Claude Code 中使用 `/paperang` 即可让 AI 助手操控喵喵机打印。
+
+---
+
+## 🖼️ 图像处理说明 / Image Processing
+
+| 模式 | 算法 | 适用场景 |
+|---|---|---|
+| `floyd` | Floyd-Steinberg 误差扩散 | 照片、渐变图、连续色调 |
+| `adaptive` | 局部自适应阈值 | 文档、线稿、高对比度图形 |
+
+图像自动旋转以获得最佳打印方向，宽度统一缩放至 576 像素。
+
+---
+
+## 🙏 致谢 / Credits
+
+- 原始项目 [ihciah/miaomiaoji-tool](https://github.com/ihciah/miaomiaoji-tool) — 喵喵机蓝牙协议逆向
+- 字体 [subframe7536/maple-font](https://github.com/subframe7536/maple-font) — MapleMono 等宽字体
+- 作者 [createskyblue](https://github.com/createskyblue) — 二代适配、CLI 重构、交互式功能
+
+---
+
+## 📄 License
+
+MIT © [ihciah](https://github.com/ihciah), [createskyblue](https://github.com/createskyblue)

@@ -1,18 +1,27 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""喵喵机2 命令行打印工具"""
+"""Paperang 2 (喵喵机2) command-line print tool.
+
+Usage:
+    python -m paperang text "hello"
+    python -m paperang image photo.jpg
+    python -m paperang qrcode "https://example.com"
+    python -m paperang interactive
+"""
 
 import argparse
 import os
 import sys
 import logging
 
-from config import setup_config
-from message_process import BtManager
-from image_process import TextConverter, ImageConverter
+from paperang.config import setup_config, load_config, list_serial_ports, save_config
+from paperang.bt import BtManager
+from paperang.image import ImageConverter
+from paperang.text import TextConverter
 
 
 def init_printer():
+    """Connect to printer, register CRC key, set defaults."""
     cfg = setup_config()
     mmj = BtManager(cfg)
     if not mmj.connected:
@@ -25,9 +34,10 @@ def init_printer():
 
 
 def _decode_escapes(s):
-    # 仅处理常见转义，避免破坏中文字节
     return s.replace('\\n', '\n').replace('\\t', '\t').replace('\\r', '\r').replace('\\\\', '\\')
 
+
+# ── subcommand handlers ──────────────────────────────────────────────
 
 def cmd_text(args):
     mmj = init_printer()
@@ -73,7 +83,6 @@ def cmd_feed(args):
 
 
 def cmd_config(args):
-    from config import load_config, list_serial_ports, save_config
     cfg = load_config()
     if args.set_port:
         cfg["serial_port"] = args.set_port
@@ -90,9 +99,22 @@ def cmd_config(args):
     print(f"当前配置: {cfg}")
 
 
+def cmd_interactive(args):
+    """Launch the interactive terminal UI (for human users)."""
+    from paperang.interactive import PrinterCLI
+
+    logging.getLogger().setLevel(logging.INFO)
+    cfg = setup_config()
+    mmj = BtManager(cfg)
+    cli = PrinterCLI(mmj)
+    cli.run()
+
+
+# ── main ─────────────────────────────────────────────────────────────
+
 def main():
     parser = argparse.ArgumentParser(
-        prog="paperang_cli",
+        prog="paperang",
         description="喵喵机2 Paperang 命令行打印工具"
     )
     subparsers = parser.add_subparsers(dest="command")
@@ -132,6 +154,10 @@ def main():
     p_cfg.add_argument("--list", action="store_true", help="列出可用串口")
     p_cfg.add_argument("--set-port", help="直接设置串口，例如 COM10")
     p_cfg.set_defaults(func=cmd_config)
+
+    # interactive
+    p_inter = subparsers.add_parser("interactive", help="启动交互式终端模式（用户直接使用）")
+    p_inter.set_defaults(func=cmd_interactive)
 
     args = parser.parse_args()
     if not args.command:

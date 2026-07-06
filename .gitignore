@@ -1,1 +1,12 @@
 __pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+env/
+config.json
+*.egg-info/
+dist/
+build/
+.DS_Store
+Thumbs.db
