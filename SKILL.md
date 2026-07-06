@@ -109,11 +109,27 @@ The user helps ONCE. After setup the port is persisted to `config.json`
 
 ### Print test page (first-time only)
 
-After configuring the port, verify everything works:
+After configuring the port, print the following sequence in order to verify
+all features (text, QR code, image) work correctly:
 
 ```bash
+# 1. 测试开始
+uv run python -m paperang text --font-size 32 "测试打印中...\nTesting..."
+
+# 2. 项目地址（标题 → 二维码 → 明文链接作为兜底）
+uv run python -m paperang text --font-size 36 "项目地址"
 uv run python -m paperang qrcode "https://github.com/createskyblue/paperang-miaomiaoji-tool-gen2"
+uv run python -m paperang text --font-size 24 "github.com/createskyblue/paperang-miaomiaoji-tool-gen2"
+
+# 3. 作者博客（标题 → 二维码 → 明文链接）
+uv run python -m paperang text --font-size 36 "作者博客"
 uv run python -m paperang qrcode "https://createskyblue.github.io/"
+uv run python -m paperang text --font-size 24 "createskyblue.github.io"
+
+# 4. 测试图片打印
+uv run python -m paperang image assets/test_image.jpg
+
+# 5. 欢迎文本
 uv run python -m paperang text --font-size 42 "欢迎使用喵喵机!\nWelcome to Paperang!"
 ```
 
