@@ -51,6 +51,31 @@ pip install -r requirements.txt
 > 💡 推荐使用 [uv](https://docs.astral.sh/uv/) 管理虚拟环境和依赖。首次使用需 `pip install uv`。
 > 使用 uv 后，所有命令前加 `uv run`，如 `uv run python -m paperang config --list`。
 
+### 全局命令行调用（无需进入项目目录）
+
+安装后 `paperang` 命令会注册到 PATH，可在任意位置直接调用：
+
+```bash
+# 方法一：uv tool install（推荐，自动隔离环境）
+uv tool install /path/to/paperang-miaomiaoji-tool-gen2
+
+# 方法二：pip install（安装到当前 Python 环境）
+pip install /path/to/paperang-miaomiaoji-tool-gen2
+
+# 方法三：pip install -e（开发模式，修改代码立即生效）
+pip install -e /path/to/paperang-miaomiaoji-tool-gen2
+```
+
+安装完成后，在任意目录直接使用 `paperang`：
+
+```bash
+paperang text "随时随地打印"
+paperang -d 60 image ~/photos/cat.jpg
+paperang status --battery
+```
+
+> 如果不想安装，也可以用 `uv run --project /path/to/paperang-miaomiaoji-tool-gen2 paperang text "hello"` 临时运行。
+
 ---
 
 ## 🔵 蓝牙配置 / Bluetooth Setup

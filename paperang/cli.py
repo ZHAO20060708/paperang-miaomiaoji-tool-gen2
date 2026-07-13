@@ -86,18 +86,31 @@ def cmd_feed(args):
     mmj.disconnect()
 
 
+def _print_reply(label, data):
+    if data is None:
+        print(f"  {label}: (无响应)")
+    elif isinstance(data, list):
+        for item in data:
+            payload = item["payload"]
+            print(f"  {label}: {payload.hex() if payload else '(空)'}")
+    elif isinstance(data, (bytes, bytearray)):
+        print(f"  {label}: {data.hex()}")
+    else:
+        print(f"  {label}: {data}")
+
+
 def cmd_status(args):
     mmj = init_printer(args)
     if args.battery:
-        mmj.queryBatteryStatus()
+        _print_reply("电池", mmj.queryBatteryStatus())
     elif args.sn:
-        mmj.querySNFromBt()
+        _print_reply("序列号", mmj.querySNFromBt())
     elif args.hardware:
-        mmj.queryHardwareInfo()
+        _print_reply("硬件信息", mmj.queryHardwareInfo())
     else:
-        mmj.queryBatteryStatus()
-        mmj.querySNFromBt()
-        mmj.queryHardwareInfo()
+        _print_reply("电池", mmj.queryBatteryStatus())
+        _print_reply("序列号", mmj.querySNFromBt())
+        _print_reply("硬件信息", mmj.queryHardwareInfo())
     mmj.disconnect()
 
 

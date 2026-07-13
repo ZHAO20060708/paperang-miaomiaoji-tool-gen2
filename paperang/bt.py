@@ -69,26 +69,22 @@ class BtManager:
             return self.recv()
 
     def recv(self):
-        pass
+        data = self.sock.read(self.max_recv_msg_length)
+        if not data:
+            return None
+        return self.parseResponse(data)
 
-    def resultParser(self, data):
+    def parseResponse(self, data):
         base = 0
-        res = []
-        while base < len(data) and data[base] == '\x02':
-            class Info:
-                def __str__(self):
-                    return "\nControl command: %s(%s)\nPayload length: %d\nPayload(hex): %s" % (
-                        self.command, BtCommandByte.findCommand(self.command),
-                        self.payload_length, self.payload.encode('hex')
-                    )
-
-            info = Info()
-            _, info.command, _, info.payload_length = struct.unpack('<BBBH', data[base:base + 5])
-            info.payload = data[base + 5: base + 5 + info.payload_length]
-            info.crc32 = data[base + 5 + info.payload_length: base + 9 + info.payload_length]
-            base += 10 + info.payload_length
-            res.append(info)
-        return res
+        results = []
+        while base < len(data) and data[base] == 0x02:
+            if base + 5 > len(data):
+                break
+            _, command, _, payload_length = struct.unpack('<BBBH', data[base:base + 5])
+            payload = data[base + 5: base + 5 + payload_length]
+            base += 10 + payload_length
+            results.append({"command": command, "payload": payload})
+        return results if results else data
 
     # ── high-level commands ──────────────────────────────────────────
 
@@ -124,11 +120,11 @@ class BtManager:
 
     def queryBatteryStatus(self):
         msg = struct.pack('<B', 1)
-        self.sendToBt(msg, BtCommandByte.PRT_GET_BAT_STATUS)
+        return self.sendToBt(msg, BtCommandByte.PRT_GET_BAT_STATUS)
 
     def queryDensity(self):
         msg = struct.pack('<B', 1)
-        self.sendToBt(msg, BtCommandByte.PRT_GET_HEAT_DENSITY)
+        return self.sendToBt(msg, BtCommandByte.PRT_GET_HEAT_DENSITY)
 
     def sendFeedToHeadLineToBt(self, length):
         msg = struct.pack('<H', length)
@@ -136,12 +132,12 @@ class BtManager:
 
     def queryPowerOffTime(self):
         msg = struct.pack('<B', 1)
-        self.sendToBt(msg, BtCommandByte.PRT_GET_POWER_DOWN_TIME)
+        return self.sendToBt(msg, BtCommandByte.PRT_GET_POWER_DOWN_TIME)
 
     def querySNFromBt(self):
         msg = struct.pack('<B', 1)
-        self.sendToBt(msg, BtCommandByte.PRT_GET_SN)
+        return self.sendToBt(msg, BtCommandByte.PRT_GET_SN)
 
     def queryHardwareInfo(self):
         msg = struct.pack('<B', 1)
-        self.sendToBt(msg, BtCommandByte.PRT_GET_HW_INFO)
+        return self.sendToBt(msg, BtCommandByte.PRT_GET_HW_INFO)
