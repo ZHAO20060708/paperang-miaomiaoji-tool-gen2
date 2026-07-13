@@ -103,12 +103,13 @@ class ImageConverter:
         return np.sum(img_array == 0)
 
     @staticmethod
-    def process_image_for_printing_with_mode(image_path, mode="auto"):
+    def process_image_for_printing_with_mode(image_path, mode="auto", no_rotate=False):
         """Process an image file for printing with the given mode.
 
         Args:
             image_path: Path to the image file.
             mode: One of "floyd" ("f"), "adaptive" ("a"), or "auto".
+            no_rotate: If True, skip automatic rotation.
 
         Returns:
             Binary print data ready to send to the printer.
@@ -116,12 +117,13 @@ class ImageConverter:
         original_img = Image.open(image_path)
 
         # Auto-rotate: pick the orientation that fits the 576px width better
-        width, height = original_img.size
-        ratio_original = float(width) / height
-        ratio_rotated = float(height) / width
+        if not no_rotate:
+            width, height = original_img.size
+            ratio_original = float(width) / height
+            ratio_rotated = float(height) / width
 
-        if ratio_rotated < ratio_original and ratio_original > 1.2 and ratio_original < 2:
-            original_img = original_img.rotate(-90, expand=True)
+            if ratio_rotated < ratio_original and ratio_original > 1.2 and ratio_original < 2:
+                original_img = original_img.rotate(-90, expand=True)
 
         if original_img.width > 576:
             resized_img = original_img.resize(

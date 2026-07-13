@@ -20,15 +20,18 @@ from paperang.image import ImageConverter
 from paperang.text import TextConverter
 
 
-def init_printer():
+def init_printer(args):
     """Connect to printer, register CRC key, set defaults."""
     cfg = setup_config()
+    if args.port:
+        cfg["serial_port"] = args.port
     mmj = BtManager(cfg)
     if not mmj.connected:
         print("打印机连接失败，请检查串口配置与设备连接。", file=sys.stderr)
         sys.exit(1)
     mmj.registerCrcKeyToBt()
-    mmj.sendDensityToBt(100)
+    density = args.density if hasattr(args, 'density') and args.density is not None else 100
+    mmj.sendDensityToBt(density)
     mmj.sendPowerOffTimeToBt(0)
     return mmj
 
@@ -40,9 +43,9 @@ def _decode_escapes(s):
 # ── subcommand handlers ──────────────────────────────────────────────
 
 def cmd_text(args):
-    mmj = init_printer()
+    mmj = init_printer(args)
     text = _decode_escapes(args.text)
-    img = TextConverter.text2bmp(text, font_size=args.font_size)
+    img = TextConverter.text2bmp(text, font_size=args.font_size, font_path=args.font)
     mmj.sendImageToBt(img)
     if args.feed:
         mmj.sendFeedLineToBt(args.feed)
@@ -50,11 +53,12 @@ def cmd_text(args):
 
 
 def cmd_image(args):
-    mmj = init_printer()
+    mmj = init_printer(args)
     if not os.path.isfile(args.path):
         print(f"文件不存在: {args.path}", file=sys.stderr)
         sys.exit(1)
-    img_data = ImageConverter.process_image_for_printing_with_mode(args.path, args.mode)
+    img_data = ImageConverter.process_image_for_printing_with_mode(
+        args.path, args.mode, no_rotate=args.no_rotate)
     mmj.sendImageToBt(img_data)
     if args.feed:
         mmj.sendFeedLineToBt(args.feed)
@@ -62,7 +66,7 @@ def cmd_image(args):
 
 
 def cmd_qrcode(args):
-    mmj = init_printer()
+    mmj = init_printer(args)
     img_data = ImageConverter.generate_qr_code(args.text)
     mmj.sendImageToBt(img_data)
     if args.feed:
@@ -71,14 +75,29 @@ def cmd_qrcode(args):
 
 
 def cmd_selftest(args):
-    mmj = init_printer()
+    mmj = init_printer(args)
     mmj.sendSelfTestToBt()
     mmj.disconnect()
 
 
 def cmd_feed(args):
-    mmj = init_printer()
+    mmj = init_printer(args)
     mmj.sendFeedLineToBt(args.length)
+    mmj.disconnect()
+
+
+def cmd_status(args):
+    mmj = init_printer(args)
+    if args.battery:
+        mmj.queryBatteryStatus()
+    elif args.sn:
+        mmj.querySNFromBt()
+    elif args.hardware:
+        mmj.queryHardwareInfo()
+    else:
+        mmj.queryBatteryStatus()
+        mmj.querySNFromBt()
+        mmj.queryHardwareInfo()
     mmj.disconnect()
 
 
@@ -117,20 +136,25 @@ def main():
         prog="paperang",
         description="喵喵机2 Paperang 命令行打印工具"
     )
+    parser.add_argument("-p", "--port", help="指定串口（覆盖配置文件）")
+    parser.add_argument("-d", "--density", type=int, choices=range(1, 101), metavar="1-100",
+                        help="打印浓度 (1-100，默认100)")
     subparsers = parser.add_subparsers(dest="command")
 
     # text
     p_text = subparsers.add_parser("text", help="打印文字")
     p_text.add_argument("text", help="要打印的文字内容")
     p_text.add_argument("--font-size", type=int, default=24, help="字体大小 (默认24)")
+    p_text.add_argument("--font", help="自定义字体：文件路径(.ttf/.otf)或系统字体名称")
     p_text.add_argument("--feed", type=int, default=0, help="打印后走纸长度，连续打印时设为0，最后统一走纸")
     p_text.set_defaults(func=cmd_text)
 
     # image
     p_img = subparsers.add_parser("image", help="打印图片")
     p_img.add_argument("path", help="图片路径")
-    p_img.add_argument("--mode", choices=["floyd", "adaptive", "f", "a"], default="floyd",
-                       help="图像处理模式 (默认floyd)")
+    p_img.add_argument("--mode", choices=["floyd", "adaptive", "auto", "f", "a"], default="floyd",
+                       help="图像处理模式: floyd/adaptive/auto (默认floyd)")
+    p_img.add_argument("--no-rotate", action="store_true", help="禁用自动旋转")
     p_img.add_argument("--feed", type=int, default=0, help="打印后走纸长度，连续打印时设为0，最后统一走纸")
     p_img.set_defaults(func=cmd_image)
 
@@ -148,6 +172,13 @@ def main():
     p_feed = subparsers.add_parser("feed", help="走纸")
     p_feed.add_argument("length", type=int, help="走纸长度")
     p_feed.set_defaults(func=cmd_feed)
+
+    # status
+    p_status = subparsers.add_parser("status", help="查询打印机状态")
+    p_status.add_argument("--battery", action="store_true", help="查询电池状态")
+    p_status.add_argument("--sn", action="store_true", help="查询序列号")
+    p_status.add_argument("--hardware", action="store_true", help="查询硬件信息")
+    p_status.set_defaults(func=cmd_status)
 
     # config
     p_cfg = subparsers.add_parser("config", help="查看或修改配置")

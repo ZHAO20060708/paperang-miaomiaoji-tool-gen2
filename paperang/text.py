@@ -13,33 +13,52 @@ class TextConverter:
     """Converts text into bitmap data suitable for the Paperang 2 printer."""
 
     @staticmethod
-    def text2bmp(text, font_size=24):
+    def text2bmp(text, font_size=24, font_path=None):
         """Render text to a 576px-wide bitmap and convert to printer data.
 
         Args:
             text: The text string to print (supports \\n for newlines).
             font_size: Font size in points (8-72 recommended).
+            font_path: Path to a custom .ttf/.otf font file (optional).
 
         Returns:
             Binary print data.
         """
         text = _ANSI_RE.sub('', text)
 
-        # Look for bundled font, fall back to PIL default
-        font_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "assets")
-        mono_font_candidates = [
-            os.path.join(font_dir, "MapleMono-NF-CN-Light.ttf"),
-            "MapleMono-NF-CN-Light.ttf",  # fallback: cwd
-        ]
-
         font = ImageFont.load_default()
-        for font_file in mono_font_candidates:
-            try:
-                font = ImageFont.truetype(font_file, font_size)
-                font.set_variation_by_name("WIDTH")
-                break
-            except Exception:
-                continue
+        if font_path:
+            loaded = False
+            # Try as file path first
+            if os.path.isfile(font_path):
+                try:
+                    font = ImageFont.truetype(font_path, font_size)
+                    loaded = True
+                except Exception:
+                    pass
+            # Fall back to font name (system lookup)
+            if not loaded:
+                try:
+                    font = ImageFont.truetype(font_path, font_size)
+                    loaded = True
+                except Exception:
+                    pass
+            if not loaded:
+                print(f"无法加载字体 {font_path}（尝试了文件路径和系统字体名）",
+                      file=__import__('sys').stderr)
+        else:
+            font_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "assets")
+            mono_font_candidates = [
+                os.path.join(font_dir, "MapleMono-NF-CN-Light.ttf"),
+                "MapleMono-NF-CN-Light.ttf",
+            ]
+            for font_file in mono_font_candidates:
+                try:
+                    font = ImageFont.truetype(font_file, font_size)
+                    font.set_variation_by_name("WIDTH")
+                    break
+                except Exception:
+                    continue
 
         # Word-wrap text into lines fitting 576px
         lines = []

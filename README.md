@@ -78,18 +78,44 @@ python -m paperang config --set-port /dev/rfcomm0  # 设置端口（仅需一次
 
 > 适合脚本、自动化、AI agent 调用。每个命令连接 → 打印 → 断开。
 
+#### 全局参数
+
+所有需要连接打印机的子命令都可使用以下全局参数：
+
+| 参数 | 说明 |
+|---|---|
+| `-p PORT`, `--port PORT` | 临时指定串口（覆盖配置文件，不修改配置） |
+| `-d N`, `--density N` | 打印浓度 1-100（默认100） |
+
+```bash
+# 示例：临时使用其他串口，降低浓度
+python -m paperang -p /dev/rfcomm1 -d 80 text "省墨打印"
+```
+
+#### 子命令
+
 ```bash
 # 打印文字
 python -m paperang text "你好，世界！"
 python -m paperang text --font-size 48 "大标题"
 python -m paperang text "Line1\nLine2"              # \n 换行
+python -m paperang text --font "/path/to/font.ttf" "自定义字体"
+python -m paperang text --font "Noto Sans CJK SC" "系统字体名也行"
 
 # 打印图片
 python -m paperang image photo.jpg
 python -m paperang image --mode adaptive drawing.png  # 文档/线条图推荐 adaptive
+python -m paperang image --mode auto photo.jpg        # 自动选择模式
+python -m paperang image --no-rotate wide.png         # 禁用自动旋转
 
 # 打印二维码
 python -m paperang qrcode "https://github.com"
+
+# 查询打印机状态
+python -m paperang status                            # 查询全部状态
+python -m paperang status --battery                  # 仅电池
+python -m paperang status --sn                       # 仅序列号
+python -m paperang status --hardware                 # 仅硬件信息
 
 # 自检页
 python -m paperang selftest
@@ -102,6 +128,22 @@ python -m paperang config --list
 python -m paperang config --set-port /dev/rfcomm0
 python -m paperang config                            # 查看当前配置
 ```
+
+#### 各子命令参数一览
+
+| 子命令 | 参数 | 说明 |
+|---|---|---|
+| `text` | `--font-size N` | 字体大小（默认24） |
+| | `--font PATH` | 自定义字体：文件路径(.ttf/.otf)或系统字体名称 |
+| | `--feed N` | 打印后走纸长度 |
+| `image` | `--mode` | `floyd`/`adaptive`/`auto`（默认floyd） |
+| | `--no-rotate` | 禁用自动旋转 |
+| | `--feed N` | 打印后走纸长度 |
+| `qrcode` | `--feed N` | 打印后走纸长度 |
+| `status` | `--battery` | 查询电池状态 |
+| | `--sn` | 查询序列号 |
+| | `--hardware` | 查询硬件信息 |
+| `feed` | `length` | 走纸长度（必填） |
 
 ### 交互式模式 / Interactive Mode
 
