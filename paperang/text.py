@@ -1,7 +1,10 @@
 """Text-to-bitmap conversion for Paperang 2 printing."""
 
 import os
+import re
 from PIL import Image, ImageDraw, ImageFont
+
+_ANSI_RE = re.compile(r'\x1b\[[0-9;]*[a-zA-Z]|\x1b\].*?\x07|\x1b\[.*?\x1b\\')
 
 from paperang.image import ImageConverter
 
@@ -20,6 +23,8 @@ class TextConverter:
         Returns:
             Binary print data.
         """
+        text = _ANSI_RE.sub('', text)
+
         # Look for bundled font, fall back to PIL default
         font_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "assets")
         mono_font_candidates = [

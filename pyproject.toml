@@ -23,5 +23,12 @@ dependencies = [
     "qrcode>=7.4",
 ]
 
+[project.scripts]
+paperang = "paperang.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
 [dependency-groups]
 dev = []

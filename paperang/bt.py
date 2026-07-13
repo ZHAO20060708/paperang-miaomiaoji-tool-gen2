@@ -105,8 +105,10 @@ class BtManager:
 
     def sendImageToBt(self, binary_img):
         self.sendPaperTypeToBt()
-        msg = binary_img
-        self.sendToBt(msg, BtCommandByte.PRT_PRINT_DATA, need_reply=False)
+        line_bytes = 72  # 576 pixels / 8 = 72 bytes per line
+        for i in range(0, len(binary_img), line_bytes):
+            line = binary_img[i:i + line_bytes]
+            self.sendToBt(line, BtCommandByte.PRT_PRINT_DATA, need_reply=False)
 
     def sendSelfTestToBt(self):
         msg = struct.pack('<B', 0)
