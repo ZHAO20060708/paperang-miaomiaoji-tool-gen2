@@ -5,10 +5,13 @@
 
 [![License](https://img.shields.io/github/license/createskyblue/paperang-miaomiaoji-tool-gen2)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/)
-[![Platform](https://img.shields.io/badge/platform-Windows-blue.svg)]()
+[![Platform](https://img.shields.io/badge/platform-Linux-blue.svg)]()
 
 > 基于 [ihciah/paperang-miaomiaoji-tool](https://github.com/ihciah/miaomiaoji-tool) 适配，专为 **喵喵机2代 (Paperang 2)** 优化的蓝牙打印工具。
 > 支持 **命令行模式**（适合脚本/AI 调用）与 **交互式模式**（适合人工直接使用）。
+
+> **注意：** 本项目仅在 Linux 上测试通过。macOS / Windows 理论上可用（基于 pyserial 跨平台串口），但未经验证，不保证可用性。
+> 本项目部分代码由 AI 辅助编写和重构。
 
 A Python tool for controlling the **Paperang 2** portable Bluetooth thermal printer. Supports both a
 **CLI mode** (for scripts / AI agents) and an **interactive mode** (for direct human use).
@@ -50,24 +53,22 @@ pip install -r requirements.txt
 
 ---
 
-## 🔵 Windows 蓝牙配置 / Bluetooth Setup
+## 🔵 蓝牙配置 / Bluetooth Setup
 
-1. 开启电脑蓝牙，长按喵喵机电源键至指示灯闪烁
-2. **设置** → **设备** → **蓝牙和其他设备** → 添加蓝牙设备 → 配对喵喵机
-3. **设置** → **蓝牙和其他设备** → **更多蓝牙选项** → **COM 端口** 标签页 → 点击"添加" → 选择"传出（你的计算机启动连接）" → 浏览并选择名称含 **PAPERANG** 的设备 → 记下分配的 COM 端口号（如 `COM10`）
+1. 长按喵喵机电源键至指示灯闪烁
+2. 在系统蓝牙设置中配对名称含 **PAPERANG** 的设备
+3. 配对后系统会分配一个串口设备（Linux: `/dev/rfcomm0`，macOS: `/dev/tty.PAPERANG*`，Windows: `COM10` 等）
 4. 配置工具：
 
 ```bash
 python -m paperang config --list              # 列出可用串口
-python -m paperang config --set-port COM10    # 设置端口（仅需一次）
+python -m paperang config --set-port /dev/rfcomm0  # 设置端口（仅需一次）
 ```
 
-![蓝牙设置步骤1](img/PixPin_2025-10-22_00-16-01.png)
-![蓝牙设置步骤2](img/PixPin_2025-10-22_00-16-06.png)
-![蓝牙设置步骤3](img/PixPin_2025-10-22_00-16-15.png)
-![蓝牙设置步骤4](img/PixPin_2025-10-22_00-16-25.png)
-![蓝牙设置步骤5](img/PixPin_2025-10-22_00-16-30.png)
-![蓝牙设置步骤6](img/PixPin_2025-10-22_00-17-06.png)
+> **Linux 提示：** 配对后可能需要手动绑定 rfcomm 设备：
+> ```bash
+> sudo rfcomm bind 0 <MAC地址>   # MAC地址可通过 bluetoothctl 获取
+> ```
 
 ---
 
@@ -98,7 +99,7 @@ python -m paperang feed 100
 
 # 查看/修改配置
 python -m paperang config --list
-python -m paperang config --set-port COM10
+python -m paperang config --set-port /dev/rfcomm0
 python -m paperang config                            # 查看当前配置
 ```
 
@@ -126,10 +127,6 @@ python paperang/interactive.py
 | `/help` | 显示帮助 |
 | 直接回车 | 走纸 25 单位 |
 
-### Windows 一键启动
-
-双击 `scripts/喵喵机.bat`，可选择交互模式 / 命令行帮助 / 自检打印。
-
 ---
 
 ## 📁 项目结构 / Project Structure
@@ -151,7 +148,7 @@ paperang-miaomiaoji-tool-gen2/
 │   └── test_image.jpg            # 测试图片
 ├── img/                          # 文档截图
 ├── scripts/
-│   └── 喵喵机.bat                # Windows 启动脚本
+│   └── 喵喵机.bat                # Windows 快捷启动脚本
 ├── SKILL.md                      # Claude Code Skill 定义
 ├── requirements.txt
 ├── README.md
