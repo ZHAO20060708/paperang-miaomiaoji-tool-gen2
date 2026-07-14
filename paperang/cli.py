@@ -44,7 +44,11 @@ def _decode_escapes(s):
 
 def cmd_text(args):
     mmj = init_printer(args)
-    text = _decode_escapes(args.text)
+    text = args.text
+    if text == '-':
+        # Read all text from standard input
+        text = sys.stdin.read()
+    text = _decode_escapes(text)
     img = TextConverter.text2bmp(text, font_size=args.font_size, font_path=args.font)
     mmj.sendImageToBt(img)
     if args.feed:

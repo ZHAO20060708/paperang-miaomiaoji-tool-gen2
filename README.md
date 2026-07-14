@@ -126,6 +126,8 @@ python -m paperang text --font-size 48 "大标题"
 python -m paperang text "Line1\nLine2"              # \n 换行
 python -m paperang text --font "/path/to/font.ttf" "自定义字体"
 python -m paperang text --font "Noto Sans CJK SC" "系统字体名也行"
+# 管道/标准输入打印终端输出 (使用 - 作为文字参数读取 stdin)
+uname -a | python -m paperang text - --feed 250
 
 # 打印图片
 python -m paperang image photo.jpg
@@ -215,7 +217,8 @@ paperang-miaomiaoji-tool-gen2/
 │   └── test_image.jpg            # 测试图片
 ├── img/                          # 文档截图
 ├── scripts/
-│   └── 喵喵机.bat                # Windows 快捷启动脚本
+│   ├── 喵喵机.bat                # Windows 快捷启动脚本
+│   └── connect.sh                # Linux 一键绑定与连接测试脚本
 ├── SKILL.md                      # Claude Code Skill 定义
 ├── requirements.txt
 ├── README.md

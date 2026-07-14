@@ -1,166 +1,175 @@
 ---
 name: paperang
 description: >-
-  控制喵喵机2（Paperang Gen2）热敏打印机。支持打印文字、打印图片、打印二维码、
-  打印自检页、走纸、查看串口配置。
-  触发词：打印、printer、paperang、喵喵机、打印文字、打印图片、打印二维码、走纸、selftest。
+  控制喵喵机2（Paperang Gen2）蓝牙热敏打印机。支持打印文字、图片、二维码，
+  查询状态（电池/序列号/硬件），走纸、自检、配置串口。
+  触发词：打印、printer、paperang、喵喵机、打印文字、打印图片、打印二维码、走纸、
+  selftest、热敏、thermal print。确保在用户提到任何与打印相关的需求时使用此 skill。
 ---
 
-# Paperang 2 (喵喵机2) 打印 Skill
+# Paperang 2 喵喵机打印 Skill
 
-**IRON LAW: 执行打印前必须确认串口已配置（config.json 存在且有效）。绝不猜测串口号；首次使用必须引导用户完成串口配置。检查方法：`uv run python -m paperang config`。**
+## 核心规则
 
-**FEED RULE: 单次打印（只打一条）→ 必须加 `--feed 250` 把内容推到可见区域。连续打印（多条）→ 中间不加 feed，最后一条命令 `&& uv run python -m paperang feed 250`。打印完看不到内容就是忘了走纸。**
+1. **串口先行** — 执行任何打印前必须确认串口已配置。检查方法：`paperang config`。如果 `serial_port` 为 null，必须引导用户完成配置，绝不猜测串口。
+2. **走纸收尾** — 单次打印后加 `--feed 250` 把内容推出机器。连续多条打印时中间不走纸，最后一条加 `--feed 250` 或追加 `paperang feed 250`。忘记走纸 = 内容卡在机器里看不到。
+3. **确认文件存在** — 打印图片前先确认文件路径有效。
 
-## Workflow checklist
+## 命令速查
+
+> 如果项目已通过 `uv tool install` 或 `pip install` 全局安装，直接使用 `paperang`。
+> 否则在项目目录下使用 `uv run python -m paperang`。
+
+| 任务 | 命令 |
+|---|---|
+| 查看配置 | `paperang config` |
+| 列出串口 | `paperang config --list` |
+| 设置串口 | `paperang config --set-port /dev/rfcomm0` |
+| 打印文字 | `paperang text "你好世界"` |
+| 打印文字（大号） | `paperang text --font-size 48 "标题"` |
+| 打印文字（自定义字体） | `paperang text --font "/path/to/font.ttf" "内容"` |
+| 打印图片 | `paperang image photo.jpg` |
+| 打印图片（文档模式） | `paperang image --mode adaptive doc.png` |
+| 打印图片（禁用旋转） | `paperang image --no-rotate wide.png` |
+| 打印二维码 | `paperang qrcode "https://example.com"` |
+| 查询状态（全部） | `paperang status` |
+| 查询电池 | `paperang status --battery` |
+| 自检页 | `paperang selftest` |
+| 走纸 | `paperang feed 250` |
+| 降低浓度打印 | `paperang -d 60 text "省墨"` |
+| 临时指定串口 | `paperang -p /dev/rfcomm1 text "hello"` |
+
+## 全局参数
+
+所有连接打印机的子命令均支持：
+
+| 参数 | 说明 |
+|---|---|
+| `-p PORT` / `--port PORT` | 临时指定串口（不修改配置文件） |
+| `-d N` / `--density N` | 打印浓度 1–100（默认 100） |
+
+## 子命令参数详情
+
+### text
+
+```
+paperang text [--font-size N] [--font PATH] [--feed N] "内容"
+```
+
+- `--font-size`：字体大小，默认 24。推荐范围 12–72。
+- `--font`：自定义字体文件路径（.ttf/.otf）或系统字体名称。不指定则使用内置 MapleMono 等宽字体。
+- `--feed`：打印后走纸长度。
+- 支持 `\n` 换行、`\t` 制表符。
+
+字号参考：
+
+| 字号 | 适用 |
+|---|---|
+| 12–24 | 密集文本、长段落（默认） |
+| 36 | 中等，兼顾可读性与信息量 |
+| 48 | 大字，标题或重点 |
+| 72 | 超大，短句或展示 |
+
+### image
+
+```
+paperang image [--mode floyd|adaptive|auto] [--no-rotate] [--feed N] PATH
+```
+
+| 模式 | 算法 | 适用场景 |
+|---|---|---|
+| `floyd`（默认） | Floyd-Steinberg 误差扩散 | 照片、渐变、连续色调 |
+| `adaptive` | 局部自适应阈值 | 文档、线稿、高对比度 |
+| `auto` | 自动选择 | 不确定时使用 |
+
+图片自动缩放至 576px 宽，横向图片默认旋转为纵向（`--no-rotate` 禁用）。
+
+### qrcode
+
+```
+paperang qrcode [--feed N] "内容"
+```
+
+### status
+
+```
+paperang status [--battery] [--sn] [--hardware]
+```
+
+不带参数查询全部。
+
+### feed / selftest
+
+```
+paperang feed <长度>
+paperang selftest
+```
+
+---
+
+## 工作流程
 
 每次打印任务按以下步骤执行：
 
-- [ ] **Step 1: 确认串口已配置** — `uv run python -m paperang config` 有 `serial_port` 则跳过，否则走首次设置流程
-- [ ] **Step 2: 确认打印意图与参数** — text / image / qrcode / selftest / feed / config？收集必要参数
-- [ ] **Step 3: 构建并执行命令** — 所有命令使用 `uv run python -m paperang <subcommand>`
-- [ ] **Step 4: 反馈结果** — 向用户报告执行结果或错误信息
+1. **确认串口** — 运行 `paperang config`，有 `serial_port` 则继续，否则走首次设置流程。
+2. **确认意图** — 用户要打印什么？收集内容、字号、图片路径等参数。
+3. **执行命令** — 构建并运行命令。连续打印用 `&&` 串联，最后一条带走纸。
+4. **报告结果** — 告诉用户执行情况。
 
----
-
-## Quick reference
-
-> All commands use `uv run` for isolated venv execution.
-
-| Task | Command |
-|---|---|
-| Check config | `uv run python -m paperang config` |
-| List serial ports | `uv run python -m paperang config --list` |
-| Set serial port | `uv run python -m paperang config --set-port COM10` |
-| Print text | `uv run python -m paperang text "hello world"` |
-| Print text (custom size) | `uv run python -m paperang text --font-size 48 "TITLE"` |
-| Print image | `uv run python -m paperang image path/to/photo.jpg` |
-| Print image (adaptive) | `uv run python -m paperang image --mode adaptive photo.jpg` |
-| Print QR code | `uv run python -m paperang qrcode "https://example.com"` |
-| Self-test page | `uv run python -m paperang selftest` |
-| Feed paper | `uv run python -m paperang feed 100` |
-| Interactive mode (human) | `uv run python -m paperang interactive` |
-
-### Text size recommendations
-
-| Size | Use case |
-|---|---|
-| `12–24` | 小字号，适合密集文本、长段落（默认 24） |
-| `36` | 中等字号，兼顾可读性与信息量 |
-| `48` | 大字号，适合标题或重点强调 |
-| `72` | 超大字号，适合短句或突出展示 |
-
-### Image processing modes
-
-| Mode | Algorithm | Best for |
-|---|---|---|
-| `floyd` (default) | Floyd-Steinberg error diffusion | Photos, gradients, continuous-tone |
-| `adaptive` | Local adaptive threshold | Documents, line art, high-contrast |
-
----
-
-## Setup flow
-
-### Check existing configuration
-
-**Always start here.** Before any print command, verify the port is configured:
+### 连续打印示例
 
 ```bash
-uv run python -m paperang config
+paperang text --font-size 36 "标题" && \
+paperang qrcode "https://example.com" && \
+paperang text "扫码访问" --feed 250
 ```
 
-- **Already has `serial_port`** → skip to printing.
-- **`serial_port` is `null` or missing** → first-time setup below.
+---
 
-### First-time setup
+## 首次设置
 
-The user helps ONCE. After setup the port is persisted to `config.json`
-**and saved to your persistent memory** — subsequent sessions just work.
+仅需执行一次，端口配置持久保存在项目的 `config.json` 中。
 
-1. **Install dependencies**:
+1. **安装依赖**（如尚未安装）：
    ```bash
    uv sync
    ```
-   > If uv is not installed: `pip install uv` or https://docs.astral.sh/uv/
 
-2. **Guide the user to pair via Windows Bluetooth**:
-   - Long-press Paperang power button until LED blinks
-   - Settings → Bluetooth & devices → Add device → Bluetooth
-   - Find and pair the Paperang
+2. **蓝牙配对**：
+   - 长按喵喵机电源键至指示灯闪烁
+   - 系统蓝牙设置中配对名称含 PAPERANG 的设备
+   - Linux 可能需要手动绑定：`sudo rfcomm bind 0 <MAC地址>`
 
-3. **Guide the user to add a Bluetooth COM port**:
-   - Windows: Settings → Bluetooth & devices → More Bluetooth options
-   - Switch to the "COM Ports" tab
-   - Click "Add..." → "Outgoing (your computer initiates the connection)"
-   - Browse and select the device with **PAPERANG** in its name
-   - Windows will assign a COM port number (e.g. `COM10`), note it down
-
-4. **List ports and ask the user**:
+3. **选择串口**：
    ```bash
-   uv run python -m paperang config --list
+   paperang config --list
    ```
-   Show output, ask: "哪个是你的喵喵机串口？" User answers e.g. `COM10`.
+   展示列表，询问用户："哪个是你的喵喵机串口？"
 
-5. **Save the port and write to memory**:
+4. **保存配置**：
    ```bash
-   uv run python -m paperang config --set-port COM10
+   paperang config --set-port /dev/rfcomm0
    ```
-   Then write to persistent memory:
-   > Paperang printer uses COM10 on this machine. Check: `uv run python -m paperang config`.
-   > Change: `uv run python -m paperang config --set-port COM<number>`.
 
-### Print test page (first-time only)
+5. **验证连接**：
+   ```bash
+   paperang text --font-size 32 "测试打印" --feed 250
+   ```
 
-After configuring the port, verify the connection with a single quick print
-first. If it succeeds, chain the rest together:
+配置完成后写入持久记忆，后续会话无需重复。
 
-```bash
-# Step 1: 快速探路 — 只打一行确认连接正常
-uv run python -m paperang text --font-size 32 "测试打印中...\nTesting..."
-```
+## 故障排查
 
-**If the above succeeds (no error)** → chain the remaining prints with `&&`:
+| 问题 | 处理 |
+|---|---|
+| 连接失败 | `paperang config --list` 确认串口存在；检查打印机是否开机并已配对 |
+| 串口消失 | 可能需要重新 `sudo rfcomm bind`；询问用户重新选择 |
+| 打印出来是空白 | 忘记走纸，补一个 `paperang feed 250` |
+| 图片效果差 | 照片用 `floyd`，文档/线稿用 `adaptive` |
 
-```bash
-uv run python -m paperang text --font-size 36 "项目地址" && \
-uv run python -m paperang qrcode "https://github.com/createskyblue/paperang-miaomiaoji-tool-gen2" && \
-uv run python -m paperang text --font-size 24 "github.com/createskyblue/paperang-miaomiaoji-tool-gen2" && \
-uv run python -m paperang text --font-size 36 "作者博客" && \
-uv run python -m paperang qrcode "https://createskyblue.github.io/" && \
-uv run python -m paperang text --font-size 24 "createskyblue.github.io" && \
-uv run python -m paperang image assets/test_image.jpg && \
-uv run python -m paperang text --font-size 42 "欢迎使用喵喵机!\nWelcome to Paperang!" && \
-uv run python -m paperang feed 250
-```
+## 注意事项
 
-If the first command **fails**, stop and troubleshoot — don't run the chain.
-
-### Subsequent sessions
-
-Config already has `serial_port` → go straight to printing. Do NOT re-ask.
-
-### If the printer doesn't respond
-
-1. `uv run python -m paperang config --list` — check port still exists
-2. Port changed? Ask user, `--set-port` the new one, update memory
-3. Port correct but fails? Ask user to check printer is on and paired
-
----
-
-## Anti-patterns
-
-- ❌ 不要硬编码 `COM10` 或其他串口号
-- ❌ 不要跳过 config 检查，首次启动必须引导用户从列表中选择串口
-- ❌ 不要在未确认文件存在的情况下直接打印图片
-- ❌ 不要用全局 pip 安装依赖，始终用 `uv sync`
-
----
-
-## Interactive mode (for human users)
-
-Interactive REPL for direct human use:
-```bash
-uv run python -m paperang interactive
-```
-Commands: `/selftest`, `/qrcode <text>`, `/fontsize <N>`, `/imgmode <mode>`, `/help`.
-Enter text or image path directly to print.
+- 不要硬编码串口号，始终从配置读取或让用户选择
+- 不要在未确认文件存在的情况下打印图片
+- 不要跳过配置检查
+- 使用 `uv sync` 安装依赖，不要全局 pip install 到系统 Python
