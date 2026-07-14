@@ -172,6 +172,15 @@ python -m paperang config                            # 查看当前配置
 | | `--hardware` | 查询硬件信息 |
 | `feed` | `length` | 走纸长度（必填） |
 
+### GUI 模式 / GUI Mode
+
+> 提供直观的图形化界面，支持文本打印、图片预览与选择、二维码生成以及快捷好玩命令一键获取打印。
+> 本应用依赖 **PySide6**（已集成在系统环境中）。
+
+```bash
+uv run python scripts/gui.py
+```
+
 ### 交互式模式 / Interactive Mode
 
 > 适合人工直接使用，启动后可持续输入。
@@ -218,7 +227,8 @@ paperang-miaomiaoji-tool-gen2/
 ├── img/                          # 文档截图
 ├── scripts/
 │   ├── 喵喵机.bat                # Windows 快捷启动脚本
-│   └── connect.sh                # Linux 一键绑定与连接测试脚本
+│   ├── connect.sh                # Linux 一键绑定与连接测试脚本
+│   └── gui.py                    # PySide6 GUI 桌面客户端
 ├── SKILL.md                      # Claude Code Skill 定义
 ├── requirements.txt
 ├── README.md
