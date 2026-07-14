@@ -186,7 +186,11 @@ class PrinterWorker(QThread):
             mmj.disconnect()
             self.finished.emit(True, "打印指令发送成功！")
         except Exception as e:
-            self.finished.emit(False, f"执行出错: {str(e)}")
+            err_msg = str(e)
+            if "Errno 5" in err_msg or "input/output error" in err_msg.lower():
+                self.finished.emit(False, "连接失败：输入/输出错误 (Errno 5)。\n\n这通常是因为：\n1. 喵喵机自动关机了（长按电源键开机，绿灯亮起即可）\n2. 打印机超出了蓝牙接收范围\n3. 蓝牙模块被挂起。请确认打印机已开机，然后再次尝试。")
+            else:
+                self.finished.emit(False, f"执行出错: {err_msg}")
 
 
 # --- MainWindow UI ---
