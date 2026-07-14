@@ -208,9 +208,9 @@ class PaperangGUI(QMainWindow):
 
         # Header Status Panel
         status_layout = QHBoxLayout()
-        self.status_label = QLabel("🔋 状态: 准备就绪 (未连接测试)")
+        self.status_label = QLabel("🔋 设备状态: 准备就绪 (未进行连接测试)")
         self.status_label.setStyleSheet("font-weight: bold; color: #00adb5;")
-        self.test_status_btn = QPushButton("测试连接")
+        self.test_status_btn = QPushButton("测试连接状态")
         self.test_status_btn.setStyleSheet("background-color: #2e2e38; color: #00adb5; border: 1px solid #00adb5;")
         self.test_status_btn.clicked.connect(self.test_connection)
         status_layout.addWidget(self.status_label)
@@ -243,19 +243,19 @@ class PaperangGUI(QMainWindow):
         widget = QWidget()
         layout = QVBoxLayout(widget)
 
-        layout.addWidget(QLabel("输入要打印的文本："))
+        layout.addWidget(QLabel("请输入需要打印的文本："))
         self.text_input = QTextEdit()
-        self.text_input.setPlaceholderText("在这里输入你想打印的内容...")
+        self.text_input.setPlaceholderText("在此输入待打印的文本内容...")
         layout.addWidget(self.text_input)
 
         opt_layout = QHBoxLayout()
-        opt_layout.addWidget(QLabel("字号 (8-72):"))
+        opt_layout.addWidget(QLabel("字体大小 (8-72):"))
         self.font_spin = QSpinBox()
         self.font_spin.setRange(8, 72)
         self.font_spin.setValue(26)
         opt_layout.addWidget(self.font_spin)
         
-        self.print_text_btn = QPushButton("开始打印")
+        self.print_text_btn = QPushButton("执行打印")
         self.print_text_btn.clicked.connect(self.print_text)
         opt_layout.addWidget(self.print_text_btn)
 
@@ -278,9 +278,9 @@ class PaperangGUI(QMainWindow):
         self.select_img_btn.clicked.connect(self.select_image)
         img_layout.addWidget(self.select_img_btn)
 
-        img_layout.addWidget(QLabel("二值化模式："))
+        img_layout.addWidget(QLabel("图像二值化算法："))
         self.img_mode_combo = QComboBox()
-        self.img_mode_combo.addItems(["floyd (照片/渐变)", "adaptive (线稿/文档)"])
+        self.img_mode_combo.addItems(["Floyd-Steinberg 误差扩散 (适用于照片/渐变)", "自适应阈值 (适用于文档/线稿)"])
         img_layout.addWidget(self.img_mode_combo)
 
         self.print_img_btn = QPushButton("打印图片")
@@ -292,9 +292,9 @@ class PaperangGUI(QMainWindow):
         # Right Column: QR Code
         qr_box = QGroupBox("二维码打印")
         qr_layout = QVBoxLayout(qr_box)
-        qr_layout.addWidget(QLabel("输入网址或文本："))
+        qr_layout.addWidget(QLabel("输入二维码内容(网址/文本)："))
         self.qr_input = QLineEdit()
-        self.qr_input.setPlaceholderText("https://...")
+        self.qr_input.setPlaceholderText("https://example.com 或 任意文本内容...")
         qr_layout.addWidget(self.qr_input)
 
         self.print_qr_btn = QPushButton("生成并打印二维码")
@@ -310,15 +310,15 @@ class PaperangGUI(QMainWindow):
     def init_fun_tab(self):
         widget = QWidget()
         layout = QVBoxLayout(widget)
-        layout.addWidget(QLabel("一键抓取并打印好玩的内容："))
+        layout.addWidget(QLabel("一键打印预设趣味内容："))
 
         btn_layout = QHBoxLayout()
         
-        btn_ff = QPushButton("💻 System Specs\n(Fastfetch)")
+        btn_ff = QPushButton("💻 System Specs\n(系统信息/Fastfetch)")
         btn_ff.clicked.connect(lambda: self.print_fun_content("fastfetch"))
         btn_layout.addWidget(btn_ff)
 
-        btn_wt = QPushButton("🌦️ Weather Report\n(wttr.in)")
+        btn_wt = QPushButton("🌦️ Weather Report\n(字符天气/wttr.in)")
         btn_wt.clicked.connect(lambda: self.print_fun_content("weather"))
         btn_layout.addWidget(btn_wt)
 
@@ -326,7 +326,7 @@ class PaperangGUI(QMainWindow):
         btn_cal.clicked.connect(lambda: self.print_fun_content("cal"))
         btn_layout.addWidget(btn_cal)
 
-        btn_jk = QPushButton("🤪 Programmer Joke\n(冷笑话)")
+        btn_jk = QPushButton("🤪 Developer Joke\n(开发者笑话)")
         btn_jk.clicked.connect(lambda: self.print_fun_content("joke"))
         btn_layout.addWidget(btn_jk)
 
@@ -334,10 +334,10 @@ class PaperangGUI(QMainWindow):
 
         self.fun_preview = QTextEdit()
         self.fun_preview.setReadOnly(True)
-        self.fun_preview.setPlaceholderText("点击上方按钮将立即抓取、预览并发送打印...")
+        self.fun_preview.setPlaceholderText("点击上方预设按钮可在线抓取、预览并自动打印...")
         layout.addWidget(self.fun_preview)
 
-        self.tabs.addTab(widget, "🎉 好玩命令")
+        self.tabs.addTab(widget, "🎉 趣味功能")
 
     # --- Settings Tab ---
     def init_config_tab(self):
@@ -348,7 +348,7 @@ class PaperangGUI(QMainWindow):
         cfg_layout = QVBoxLayout(cfg_box)
         
         port_layout = QHBoxLayout()
-        port_layout.addWidget(QLabel("选择喵喵机串口："))
+        port_layout.addWidget(QLabel("选择打印机串口设备："))
         self.port_combo = QComboBox()
         self.refresh_ports()
         port_layout.addWidget(self.port_combo)
@@ -413,7 +413,7 @@ class PaperangGUI(QMainWindow):
 
     def test_connection(self):
         self.set_loading(True)
-        self.status_label.setText("🔋 状态: 正在测试连接...")
+        self.status_label.setText("🔋 设备状态: 正在检测连接...")
         self.worker = PrinterWorker("status")
         self.worker.finished.connect(self.on_status_finished)
         self.worker.start()
@@ -421,17 +421,17 @@ class PaperangGUI(QMainWindow):
     def on_status_finished(self, success, message):
         self.set_loading(False)
         if success:
-            self.status_label.setText(f"🔋 状态: 已连接 | {message.replace(chr(10), ' | ')}")
+            self.status_label.setText(f"🔋 设备状态: 已连接 | {message.replace(chr(10), ' | ')}")
             self.status_label.setStyleSheet("font-weight: bold; color: #4caf50;")
         else:
-            self.status_label.setText("🔋 状态: 连接失败")
+            self.status_label.setText("🔋 设备状态: 连接断开")
             self.status_label.setStyleSheet("font-weight: bold; color: #f44336;")
-            QMessageBox.warning(self, "连接失败", message)
+            QMessageBox.warning(self, "设备连接失败", message)
 
     def print_text(self):
         text = self.text_input.toPlainText()
         if not text.strip():
-            QMessageBox.warning(self, "输入空白", "请输入点什么再打印吧。")
+            QMessageBox.warning(self, "输入为空", "请输入有效的文本内容。")
             return
         self.set_loading(True)
         self.worker = PrinterWorker("text", text=text, font_size=self.font_spin.value())
@@ -456,7 +456,7 @@ class PaperangGUI(QMainWindow):
     def print_qrcode(self):
         content = self.qr_input.text().strip()
         if not content:
-            QMessageBox.warning(self, "输入空白", "请输入二维码内容！")
+            QMessageBox.warning(self, "输入为空", "请输入需要生成的二维码文本或网址。")
             return
         self.set_loading(True)
         self.worker = PrinterWorker("qrcode", content=content)
@@ -478,9 +478,9 @@ class PaperangGUI(QMainWindow):
     def on_print_finished(self, success, message):
         self.set_loading(False)
         if not success:
-            QMessageBox.critical(self, "打印失败", message)
+            QMessageBox.critical(self, "设备输出错误", message)
         else:
-            self.status_label.setText("🔋 状态: 打印完成")
+            self.status_label.setText("🔋 设备状态: 打印完成")
             self.status_label.setStyleSheet("font-weight: bold; color: #4caf50;")
 
     # --- Fun Content Async Fetch & Print ---

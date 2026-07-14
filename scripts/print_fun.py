@@ -62,7 +62,7 @@ def get_joke():
             data = json.loads(response.read().decode('utf-8'))
             if not data.get("error"):
                 return data.get("joke")
-            return "没找到笑话，可能幽默感被防火墙拦截了。"
+            return "未能获取笑话数据，请检查网络连接。"
     except Exception as e:
         return f"获取笑话失败: {e}"
 
@@ -89,7 +89,7 @@ def print_content(mmj, title, text, font_size=20, feed=0):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="喵喵机好玩命令输出打印工具")
+    parser = argparse.ArgumentParser(description="喵喵机趣味命令输出打印工具")
     parser.add_argument("type", choices=["fastfetch", "weather", "cal", "joke", "all"],
                         help="要打印的内容类型")
     parser.add_argument("-f", "--feed", type=int, default=250, help="打印完走纸长度 (默认250)")
