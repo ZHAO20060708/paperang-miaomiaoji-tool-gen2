@@ -1,7 +1,9 @@
-> 🤖 **AI assistants:** 请先阅读 [SKILL.md](SKILL.md) 了解如何与本项目交互。
-> *AI assistants: read [SKILL.md](SKILL.md) first for instructions on using this project.*
+> [!NOTE]
+> 本仓库是 [createskyblue/paperang-miaomiaoji-tool-gen2](https://github.com/createskyblue/paperang-miaomiaoji-tool-gen2) 的个人维护 fork。硬件兼容性、通用问题反馈与原始实现说明以上游仓库为准；本分支用于个人设备适配与工具集成。
 
-# 🖨️ Paperang 2 喵喵机工具
+> 自动化工具在调用本项目之前，应先阅读 [SKILL.md](SKILL.md)。
+
+# Paperang 2 喵喵机工具
 
 [![License](https://img.shields.io/github/license/createskyblue/paperang-miaomiaoji-tool-gen2)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/)
@@ -20,25 +22,22 @@ A Python tool for controlling the **Paperang 2** portable Bluetooth thermal prin
 
 ---
 
-## ✨ 功能特性 / Features
+## 功能特性 / Features
 
-- 🔤 **文本打印** — 支持中英文，可调字体大小（8–72pt），集成 MapleMono 等宽字体
-- 🖼️ **图片打印** — 自动旋转、缩放至 576px 宽度，支持 Floyd-Steinberg 扩散二值化与自适应阈值两种模式
-- 📱 **二维码打印** — 一键生成并打印二维码
-- ⚙️ **设备控制** — 自检打印、走纸、浓度调节、自动关机时间设置
-- 💻 **双模式** — `python -m paperang <command>` 命令行 + `python -m paperang interactive` 交互式
-- 🤖 **Claude Code Skill** — 附带 `SKILL.md`，可直接作为 `/paperang` skill 使用
+- **文本打印**：支持中英文，可调字体大小（8–72pt），集成 MapleMono 等宽字体。
+- **图片打印**：自动旋转、缩放至 576 px 宽度，支持 Floyd–Steinberg 误差扩散和自适应阈值二值化。
+- **二维码打印**：生成并打印二维码。
+- **设备控制**：支持自检、走纸、浓度调节和自动关机时间设置。
+- **双模式**：提供 `python -m paperang <command>` 命令行模式和 `python -m paperang interactive` 交互模式。
+- **自动化集成**：仓库附带 `SKILL.md`，用于指导兼容的自动化工具调用。
 
 ---
 
-## 📦 安装 / Installation
-
-> 🤖 **懒得手动装？** 把仓库链接丢给 AI 助手（Claude Code / Cursor / Copilot 等），它会根据 `SKILL.md` 自动帮你完成安装和配置。
-> *Too lazy? Paste the repo URL into your AI coding assistant and it'll set everything up for you.*
+## 安装 / Installation
 
 ```bash
 # 1. 克隆仓库
-git clone https://github.com/createskyblue/paperang-miaomiaoji-tool-gen2.git
+git clone https://github.com/ZHAO20060708/paperang-miaomiaoji-tool-gen2.git
 cd paperang-miaomiaoji-tool-gen2
 
 # 2. 使用 uv 安装依赖（推荐）
@@ -229,7 +228,7 @@ paperang-miaomiaoji-tool-gen2/
 │   ├── 喵喵机.bat                # Windows 快捷启动脚本
 │   ├── connect.sh                # Linux 一键绑定与连接测试脚本
 │   └── gui.py                    # PySide6 GUI 桌面客户端
-├── SKILL.md                      # Claude Code Skill 定义
+├── SKILL.md                      # 自动化工具调用说明
 ├── requirements.txt
 ├── README.md
 ├── LICENSE
@@ -238,14 +237,13 @@ paperang-miaomiaoji-tool-gen2/
 
 ---
 
-## 🤖 Claude Code Skill
+## 自动化工具集成
 
-本项目根目录下的 `SKILL.md` 是 Claude Code skill 定义文件。
-在 Claude Code 中使用 `/paperang` 即可让 AI 助手操控喵喵机打印。
+项目根目录的 `SKILL.md` 说明了兼容自动化工具的调用方式、设备操作范围和安全要求。使用前应先阅读该文件，并确认串口与蓝牙设备配置正确。
 
 ---
 
-## 🖼️ 图像处理说明 / Image Processing
+## 图像处理说明 / Image Processing
 
 | 模式 | 算法 | 适用场景 |
 |---|---|---|
@@ -256,7 +254,7 @@ paperang-miaomiaoji-tool-gen2/
 
 ---
 
-## 🙏 致谢 / Credits
+## 致谢 / Credits
 
 - 原始项目 [ihciah/miaomiaoji-tool](https://github.com/ihciah/miaomiaoji-tool) — 喵喵机蓝牙协议逆向
 - 字体 [subframe7536/maple-font](https://github.com/subframe7536/maple-font) — MapleMono 等宽字体
@@ -264,6 +262,6 @@ paperang-miaomiaoji-tool-gen2/
 
 ---
 
-## 📄 License
+## License
 
 MIT © [ihciah](https://github.com/ihciah), [createskyblue](https://github.com/createskyblue)
